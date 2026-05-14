@@ -132,17 +132,31 @@ export default function GestionUsuarios() {
         }),
       });
 
+      if (res.status === 401 || res.status === 403) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("username");
+        localStorage.removeItem("rol");
+        router.push("/");
+        return;
+      }
+
       const data = await res.json();
 
-      if (res.ok) {
+      if (res.status === 201) {
         setServerMessage(`Usuario "${data.username}" creado exitosamente.`);
         setIsSuccess(true);
         setUsername("");
         setPassword("");
         setConfirmPassword("");
         setRolNuevo("Empleado");
+      } else if (res.status === 409) {
+        setServerMessage("El nombre de usuario ya existe en el sistema.");
+        setIsSuccess(false);
+      } else if (res.status === 400) {
+        setServerMessage(data.message ?? "Datos inválidos. Revise los campos.");
+        setIsSuccess(false);
       } else {
-        setServerMessage(data.message ?? "Error al crear el usuario.");
+        setServerMessage("Error inesperado. Intente de nuevo.");
         setIsSuccess(false);
       }
     } catch {
