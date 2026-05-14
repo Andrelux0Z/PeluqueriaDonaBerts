@@ -19,14 +19,55 @@ const labelStyle: React.CSSProperties = {
   color: "#333",
 };
 
-const inputStyle: React.CSSProperties = {
-  padding: "8px 10px",
-  borderRadius: "4px",
-  border: "1px solid #ccc",
-  fontSize: "14px",
-  width: "100%",
-  boxSizing: "border-box",
+function inputStyle(hasError: boolean): React.CSSProperties {
+  return {
+    padding: "8px 10px",
+    borderRadius: "4px",
+    border: `1px solid ${hasError ? "#c53030" : "#ccc"}`,
+    fontSize: "14px",
+    width: "100%",
+    boxSizing: "border-box",
+    outline: "none",
+  };
+}
+
+const errorTextStyle: React.CSSProperties = {
+  fontSize: "12px",
+  color: "#c53030",
+  margin: 0,
 };
+
+interface FormErrors {
+  username?: string;
+  password?: string;
+  confirmPassword?: string;
+}
+
+function validate(
+  username: string,
+  password: string,
+  confirmPassword: string
+): FormErrors {
+  const errors: FormErrors = {};
+
+  if (!username.trim()) {
+    errors.username = "El nombre de usuario es obligatorio.";
+  }
+
+  if (!password) {
+    errors.password = "La contraseña es obligatoria.";
+  } else if (password.length < 8) {
+    errors.password = "La contraseña debe tener al menos 8 caracteres.";
+  }
+
+  if (!confirmPassword) {
+    errors.confirmPassword = "Debe confirmar la contraseña.";
+  } else if (password !== confirmPassword) {
+    errors.confirmPassword = "Las contraseñas no coinciden.";
+  }
+
+  return errors;
+}
 
 export default function GestionUsuarios() {
   const [rolSesion, setRolSesion] = useState("");
@@ -37,8 +78,9 @@ export default function GestionUsuarios() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [rolNuevo, setRolNuevo] = useState("Empleado");
 
+  const [errors, setErrors] = useState<FormErrors>({});
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
+  const [serverMessage, setServerMessage] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
 
   useEffect(() => {
@@ -55,16 +97,23 @@ export default function GestionUsuarios() {
 
   if (rolSesion !== "Admin") return null;
 
+  const clearFieldError = (field: keyof FormErrors) => {
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: undefined }));
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setMessage("");
+    setServerMessage("");
 
-    if (password !== confirmPassword) {
-      setMessage("Las contraseñas no coinciden.");
-      setIsSuccess(false);
+    const validationErrors = validate(username, password, confirmPassword);
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
       return;
     }
 
+    setErrors({});
     setLoading(true);
     const token = localStorage.getItem("token");
 
@@ -86,18 +135,18 @@ export default function GestionUsuarios() {
       const data = await res.json();
 
       if (res.ok) {
-        setMessage(`Usuario "${data.username}" creado exitosamente.`);
+        setServerMessage(`Usuario "${data.username}" creado exitosamente.`);
         setIsSuccess(true);
         setUsername("");
         setPassword("");
         setConfirmPassword("");
         setRolNuevo("Empleado");
       } else {
-        setMessage(data.message ?? "Error al crear el usuario.");
+        setServerMessage(data.message ?? "Error al crear el usuario.");
         setIsSuccess(false);
       }
     } catch {
-      setMessage("Error de conexión con el servidor.");
+      setServerMessage("Error de conexión con el servidor.");
       setIsSuccess(false);
     } finally {
       setLoading(false);
@@ -120,6 +169,7 @@ export default function GestionUsuarios() {
 
       <form
         onSubmit={handleSubmit}
+        noValidate
         aria-label="Formulario de creación de usuario"
         style={{
           background: "#fff",
@@ -135,60 +185,68 @@ export default function GestionUsuarios() {
         <div style={fieldStyle}>
           <label style={labelStyle} htmlFor="username">Usuario</label>
           <input
-            style={inputStyle}
+            style={inputStyle(!!errors.username)}
             id="username"
             type="text"
             name="username"
             placeholder="Ej: jperez"
             autoComplete="username"
             value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
             maxLength={50}
+            onChange={(e) => {
+              setUsername(e.target.value);
+              clearFieldError("username");
+            }}
           />
+          {errors.username && <p style={errorTextStyle}>{errors.username}</p>}
         </div>
 
         <div style={fieldStyle}>
           <label style={labelStyle} htmlFor="password">Contraseña</label>
           <input
-            style={inputStyle}
+            style={inputStyle(!!errors.password)}
             id="password"
             type="password"
             name="password"
             placeholder="Mínimo 8 caracteres"
             autoComplete="new-password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            minLength={8}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              clearFieldError("password");
+            }}
           />
+          {errors.password && <p style={errorTextStyle}>{errors.password}</p>}
         </div>
 
         <div style={fieldStyle}>
           <label style={labelStyle} htmlFor="confirmPassword">Confirmar contraseña</label>
           <input
-            style={inputStyle}
+            style={inputStyle(!!errors.confirmPassword)}
             id="confirmPassword"
             type="password"
             name="confirmPassword"
             placeholder="Repita la contraseña"
             autoComplete="new-password"
             value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            required
-            minLength={8}
+            onChange={(e) => {
+              setConfirmPassword(e.target.value);
+              clearFieldError("confirmPassword");
+            }}
           />
+          {errors.confirmPassword && (
+            <p style={errorTextStyle}>{errors.confirmPassword}</p>
+          )}
         </div>
 
         <div style={fieldStyle}>
           <label style={labelStyle} htmlFor="rol">Rol</label>
           <select
-            style={inputStyle}
+            style={inputStyle(false)}
             id="rol"
             name="rol"
             value={rolNuevo}
             onChange={(e) => setRolNuevo(e.target.value)}
-            required
           >
             {ROLES.map((r) => (
               <option key={r} value={r}>{r}</option>
@@ -196,9 +254,13 @@ export default function GestionUsuarios() {
           </select>
         </div>
 
-        {message && (
-          <p style={{ color: isSuccess ? "#276749" : "#c53030", fontSize: "13px", margin: 0 }}>
-            {message}
+        {serverMessage && (
+          <p style={{
+            color: isSuccess ? "#276749" : "#c53030",
+            fontSize: "13px",
+            margin: 0,
+          }}>
+            {serverMessage}
           </p>
         )}
 
