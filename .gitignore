@@ -1,0 +1,30 @@
+# Node / Next.js
+node_modules/
+.next/
+out/
+dist/
+.env
+.env.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# VS Code
+.vscode/
+
+# .NET Core
+bin/
+obj/
+*.user
+*.suo
+*.userosprefs
+*.sln.docstates
+appsettings.Development.json
+appsettings.Local.json
+
+# Visual Studio
+.vs/
+
+# OS
+.DS_Store
+Thumbs.db
