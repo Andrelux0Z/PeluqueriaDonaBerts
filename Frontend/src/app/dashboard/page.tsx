@@ -48,6 +48,23 @@ export default function Dashboard() {
         Bienvenido, {username}
       </h1>
       <p style={{ color: "#6a6a6a", fontSize: "14px" }}>Rol: {rol}</p>
+      {rol === "Admin" && (
+        <button
+          onClick={() => router.push("/dashboard/users")}
+          style={{
+            padding: "8px 24px",
+            borderRadius: "4px",
+            border: "none",
+            background: "#2a4a7f",
+            color: "#fff",
+            fontSize: "14px",
+            fontWeight: 600,
+            cursor: "pointer",
+          }}
+        >
+          Gestión de Usuarios
+        </button>
+      )}
       <button
         onClick={handleLogout}
         style={{
