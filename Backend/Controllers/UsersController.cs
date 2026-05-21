@@ -24,13 +24,19 @@ public class UsersController(AppDbContext db, IConfiguration config) : Controlle
             return BadRequest(ModelState);
 
         if (request.Password != request.ConfirmPassword)
-            return BadRequest(new { message = "Las contraseñas no coinciden." });
+        {
+            ModelState.AddModelError("ConfirmPassword", "Las contraseñas no coinciden.");
+            return BadRequest(ModelState);
+        }
 
         bool usernameExists = await db.Usuarios
             .AnyAsync(u => u.Username == request.Username);
 
         if (usernameExists)
-            return Conflict(new { message = "El nombre de usuario ya existe en el sistema." });
+        {
+            ModelState.AddModelError("Username", "El nombre de usuario ya existe en el sistema.");
+            return Conflict(ModelState);
+        }
 
         var nuevoUsuario = new Usuario
         {
