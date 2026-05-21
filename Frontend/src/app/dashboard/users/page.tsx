@@ -109,6 +109,10 @@ export default function GestionUsuarios() {
 
     const validationErrors = validate(username, password, confirmPassword);
     if (Object.keys(validationErrors).length > 0) {
+      if (password && confirmPassword && password !== confirmPassword) {
+        setPassword("");
+        setConfirmPassword("");
+      }
       setErrors(validationErrors);
       return;
     }
