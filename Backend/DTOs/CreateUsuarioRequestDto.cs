@@ -16,6 +16,6 @@ public class CreateUsuarioRequestDto
     public string ConfirmPassword { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "El nivel de acceso es obligatorio.")]
-    [MaxLength(20)]
+    [RegularExpression("^(Admin|Empleado)$", ErrorMessage = "El rol debe ser 'Admin' o 'Empleado'.")]
     public string Rol { get; set; } = string.Empty;
 }
