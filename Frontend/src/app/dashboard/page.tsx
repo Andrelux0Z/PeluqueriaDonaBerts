@@ -45,9 +45,58 @@ export default function Dashboard() {
       gap: "12px",
     }}>
       <h1 style={{ fontSize: "24px", fontWeight: 600 }}>
-        Bienvenido, {username}
+        Dashboard - Bienvenido, {username}
       </h1>
-      <p style={{ color: "#6a6a6a", fontSize: "14px" }}>Rol: {rol}</p>
+      <p style={{ color: "#6a6a6a", fontSize: "14px", marginBottom: "20px" }}>Rol: {rol}</p>
+      
+      <div style={{ display: "flex", gap: "16px", marginBottom: "32px" }}>
+        <button
+          onClick={() => router.push("/productos")}
+          style={{
+            padding: "12px 24px",
+            borderRadius: "4px",
+            border: "none",
+            background: "#3182ce",
+            color: "#fff",
+            fontSize: "16px",
+            fontWeight: 600,
+            cursor: "pointer",
+          }}
+        >
+          Productos
+        </button>
+        <button
+          onClick={() => router.push("/servicios")}
+          style={{
+            padding: "12px 24px",
+            borderRadius: "4px",
+            border: "none",
+            background: "#3182ce",
+            color: "#fff",
+            fontSize: "16px",
+            fontWeight: 600,
+            cursor: "pointer",
+          }}
+        >
+          Servicios
+        </button>
+        <button
+          onClick={() => router.push("/historial")}
+          style={{
+            padding: "12px 24px",
+            borderRadius: "4px",
+            border: "none",
+            background: "#3182ce",
+            color: "#fff",
+            fontSize: "16px",
+            fontWeight: 600,
+            cursor: "pointer",
+          }}
+        >
+          Historial completo
+        </button>
+      </div>
+
       <button
         onClick={handleLogout}
         style={{
