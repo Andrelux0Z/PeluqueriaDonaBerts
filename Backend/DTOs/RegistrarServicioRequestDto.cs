@@ -16,4 +16,6 @@ public class RegistrarServicioRequestDto
     public decimal MontoCobrado { get; set; }
 
     public int? IdConfiguracion { get; set; }
+
+    public int? IdPostByUser { get; set; }
 }
