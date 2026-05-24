@@ -34,8 +34,9 @@ export default function Home() {
         // Almacenamiento de estado de sesión en cliente
         localStorage.setItem("isAuthenticated", "true");
         localStorage.setItem("idUsuario", data.idUsuario.toString());
-        // Redireccionamiento posterior al inicio de sesión
-        router.push("/empleados");
+        localStorage.setItem("username", username);
+        localStorage.setItem("rol", data.rol);
+        router.push("/dashboard");
       } else {
         if (data.message) {
           setMessage(data.message);

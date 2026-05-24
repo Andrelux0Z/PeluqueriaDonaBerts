@@ -4,7 +4,6 @@ using System.Security.Cryptography;
 using System.Text;
 using Backend.Data;
 using Backend.DTOs;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
@@ -14,7 +13,6 @@ namespace Backend.Controllers;
 
 [ApiController]
 [Route("api/users")]
-[Authorize(Roles = "Admin")]
 public class UsersController(AppDbContext db, IConfiguration config) : ControllerBase
 {
     [HttpPost]
