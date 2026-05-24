@@ -84,10 +84,10 @@ export default function GestionUsuarios() {
   const [isSuccess, setIsSuccess] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const isAuthenticated = localStorage.getItem("isAuthenticated");
     const rolGuardado = localStorage.getItem("rol") ?? "";
 
-    if (!token || rolGuardado !== "Admin") {
+    if (!isAuthenticated || rolGuardado !== "Admin") {
       router.push("/dashboard");
       return;
     }
@@ -119,14 +119,12 @@ export default function GestionUsuarios() {
 
     setErrors({});
     setLoading(true);
-    const token = localStorage.getItem("token");
 
     try {
-      const res = await fetch(`${BACKEND_URL}/api/users`, {
+      const res = await fetch(`http://localhost:5028/api/users`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           username,
@@ -137,7 +135,8 @@ export default function GestionUsuarios() {
       });
 
       if (res.status === 401 || res.status === 403) {
-        localStorage.removeItem("token");
+        localStorage.removeItem("isAuthenticated");
+        localStorage.removeItem("idUsuario");
         localStorage.removeItem("username");
         localStorage.removeItem("rol");
         router.push("/");
