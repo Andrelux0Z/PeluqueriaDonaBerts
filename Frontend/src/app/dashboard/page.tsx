@@ -68,6 +68,21 @@ export default function Dashboard() {
         </button>
       )}
       <button
+        onClick={() => router.push("/dashboard/servicios")}
+        style={{
+          padding: "8px 24px",
+          borderRadius: "4px",
+          border: "none",
+          background: "#2a4a7f",
+          color: "#fff",
+          fontSize: "14px",
+          fontWeight: 600,
+          cursor: "pointer",
+        }}
+      >
+        Registro de Servicios
+      </button>
+      <button
         onClick={handleLogout}
         style={{
           marginTop: "8px",

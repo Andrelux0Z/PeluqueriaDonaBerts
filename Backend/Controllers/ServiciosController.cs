@@ -110,7 +110,7 @@ public class ServiciosController(IConfiguration config) : ControllerBase
         {
             using var conn = new SqlConnection(_connStr);
             conn.Open();
-            using var cmd = new SqlCommand("dbo.sp_ObtenerConfiguracionesServicio", conn)
+            using var cmd = new SqlCommand("dbo.sp_ObtenerTiposServicio", conn)
             {
                 CommandType = CommandType.StoredProcedure
             };
