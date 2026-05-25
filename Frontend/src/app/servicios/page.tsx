@@ -30,6 +30,8 @@ const emptyForm = { idTipoServicio: null as number | null, nombreLibre: "", mont
 export default function ServiciosPage() {
   const router = useRouter();
 
+    const [authChecked, setAuthChecked] = useState(false);
+
   const [servicios, setServicios] = useState<Servicio[]>([]);
   const [filtered, setFiltered] = useState<Servicio[]>([]);
   const [tipos, setTipos] = useState<TipoServicio[]>([]);
@@ -90,9 +92,21 @@ export default function ServiciosPage() {
   }, []);
 
   useEffect(() => {
-    fetchServicios();
-    fetchTipos();
-  }, [fetchServicios, fetchTipos]);
+    const isAuthenticated = localStorage.getItem("isAuthenticated");
+    if (!isAuthenticated) {
+      router.push("/");
+      return;
+    }
+
+    setAuthChecked(true);
+  }, [router]);
+
+  useEffect(() => {
+    if (authChecked) {
+      fetchServicios();
+      fetchTipos();
+    }
+  }, [authChecked, fetchServicios, fetchTipos]);
 
   /* ─── Search & Filter ────────────────────────── */
   useEffect(() => {
@@ -225,8 +239,11 @@ export default function ServiciosPage() {
       minute: "2-digit",
     });
 
+  if (!authChecked) return null;
+
   /* ─── Render ─────────────────────────────────── */
   return (
+
     <div className={styles.page}>
       <div className={styles.header}>
         <h1 className={styles.title}>Servicios</h1>

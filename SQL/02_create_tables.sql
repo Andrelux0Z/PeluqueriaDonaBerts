@@ -169,7 +169,8 @@ AS
         c.Id                AS IdReferencia,
         c.Fecha,
         SUM(dc.Subtotal)    AS Monto,
-        1                   AS EsAdquisicion  -- TRUE = dinero que sale
+        1                   AS EsAdquisicion, -- TRUE = dinero que sale
+        NULL                AS NombreServicio
     FROM dbo.Compra c
     INNER JOIN dbo.DetalleCompra dc ON dc.IdCompra = c.Id
     GROUP BY c.Id, c.Fecha
@@ -182,7 +183,8 @@ AS
         v.Id                AS IdReferencia,
         v.Fecha,
         SUM(dv.Subtotal)    AS Monto,
-        0                   AS EsAdquisicion  -- FALSE = dinero que entra
+        0                   AS EsAdquisicion, -- FALSE = dinero que entra
+        NULL                AS NombreServicio
     FROM dbo.Venta v
     INNER JOIN dbo.DetalleVenta dv ON dv.IdVenta = v.Id
     GROUP BY v.Id, v.Fecha
@@ -195,8 +197,10 @@ AS
         s.Id                AS IdReferencia,
         s.Fecha,
         s.Monto,
-        0                   AS EsAdquisicion
-    FROM dbo.Servicio s;
+        0                   AS EsAdquisicion,
+        COALESCE(ts.Nombre, s.NombreLibre) AS NombreServicio
+    FROM dbo.Servicio s
+    LEFT JOIN dbo.TipoServicio ts ON ts.Id = s.IdTipoServicio;
 GO
 
 PRINT '✓ Todas las tablas y vistas fueron creadas exitosamente.';

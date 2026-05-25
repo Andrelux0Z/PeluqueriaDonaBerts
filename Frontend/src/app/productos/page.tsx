@@ -25,7 +25,7 @@ const emptyForm = { nombre: "", cantidad: 0, precio: 0, stockMinimo: 5 };
 /* ─── Component ──────────────────────────────── */
 export default function ProductosPage() {
   const router = useRouter();
-
+  const [authChecked, setAuthChecked] = useState(false);
   const [productos, setProductos] = useState<Producto[]>([]);
   const [filtered, setFiltered] = useState<Producto[]>([]);
   const [search, setSearch] = useState("");
@@ -66,8 +66,18 @@ export default function ProductosPage() {
   }, []);
 
   useEffect(() => {
-    fetchProductos();
-  }, [fetchProductos]);
+    const isAuthenticated = localStorage.getItem("isAuthenticated");
+    if (!isAuthenticated) {
+      router.push("/");
+      return;
+    }
+
+    setAuthChecked(true);
+  }, [router]);
+
+  useEffect(() => {
+    if (authChecked) fetchProductos();
+  }, [authChecked, fetchProductos]);
 
   const limpiarFiltros = () => {
     setSearch("");
@@ -227,6 +237,8 @@ export default function ProductosPage() {
     new Intl.NumberFormat("es-CR", { style: "currency", currency: "CRC" }).format(n);
 
   /* ─── Render ─────────────────────────────────── */
+  if (!authChecked) return null;
+
   return (
     <div className={styles.page}>
       {/* Header */}
