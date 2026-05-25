@@ -186,6 +186,80 @@ public class ServiciosController(IConfiguration config) : ControllerBase
         }
     }
 
+    [HttpPut("configuraciones/{id}")]
+    public IActionResult ActualizarTipoServicio(int id, [FromBody] ActualizarTipoServicioRequestDto request)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        try
+        {
+            using var conn = new SqlConnection(_connStr);
+            conn.Open();
+            using var cmd = new SqlCommand("dbo.sp_ActualizarTipoServicio", conn)
+            {
+                CommandType = CommandType.StoredProcedure
+            };
+
+            cmd.Parameters.AddWithValue("@inId",     id);
+            cmd.Parameters.AddWithValue("@inNombre", request.NombreServicio.Trim());
+            cmd.Parameters.AddWithValue("@inPrecio", request.PrecioBase);
+
+            var pResultCode = new SqlParameter("@outResultCode", SqlDbType.Int) { Direction = ParameterDirection.Output };
+            cmd.Parameters.Add(pResultCode);
+
+            cmd.ExecuteNonQuery();
+
+            int resultCode = (int)pResultCode.Value;
+            return resultCode switch
+            {
+                0 => Ok(new { message = "Tipo de servicio actualizado correctamente." }),
+                1 => BadRequest(new { message = "El nombre del servicio no puede estar vacío." }),
+                2 => BadRequest(new { message = "El precio base no puede ser negativo." }),
+                3 => Conflict(new  { message = "Ya existe un tipo de servicio con ese nombre." }),
+                4 => NotFound(new  { message = "El tipo de servicio no existe o fue eliminado." }),
+                _ => StatusCode(500, new { message = "Error al actualizar el tipo de servicio." })
+            };
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Error de conexión con la base de datos.", error = ex.Message });
+        }
+    }
+
+    [HttpDelete("configuraciones/{id}")]
+    public IActionResult EliminarTipoServicio(int id)
+    {
+        try
+        {
+            using var conn = new SqlConnection(_connStr);
+            conn.Open();
+            using var cmd = new SqlCommand("dbo.sp_EliminarTipoServicio", conn)
+            {
+                CommandType = CommandType.StoredProcedure
+            };
+
+            cmd.Parameters.AddWithValue("@inId", id);
+
+            var pResultCode = new SqlParameter("@outResultCode", SqlDbType.Int) { Direction = ParameterDirection.Output };
+            cmd.Parameters.Add(pResultCode);
+
+            cmd.ExecuteNonQuery();
+
+            int resultCode = (int)pResultCode.Value;
+            return resultCode switch
+            {
+                0 => Ok(new { message = "Tipo de servicio eliminado correctamente." }),
+                4 => NotFound(new { message = "El tipo de servicio no existe o ya fue eliminado." }),
+                _ => StatusCode(500, new { message = "Error al eliminar el tipo de servicio." })
+            };
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Error de conexión con la base de datos.", error = ex.Message });
+        }
+    }
+
     [HttpDelete("{id}")]
     public IActionResult EliminarServicio(int id)
     {
