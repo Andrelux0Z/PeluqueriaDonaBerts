@@ -275,6 +275,47 @@
 
 .btnLink:hover { color: var(--accent-hover); text-decoration: underline; }
 
+/* ── Modal wide (gestión de tipos) ─────────── */
+.modalWide {
+  background: var(--card-bg);
+  border-radius: 8px;
+  padding: 28px 32px 24px;
+  width: min(640px, 94vw);
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.modalHeader .modalTitle { margin-bottom: 0; }
+
+.btnClose {
+  background: none;
+  border: none;
+  font-size: 22px;
+  color: var(--muted);
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 4px;
+}
+
+.btnClose:hover { color: var(--ink); }
+
+/* ── Confirm note ───────────────────────────── */
+.confirmNote {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 20px;
+  margin-top: -12px;
+  line-height: 1.5;
+}
+
 /* ── Confirm ────────────────────────────────── */
 .confirmText {
   font-size: 14px;

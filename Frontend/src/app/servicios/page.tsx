@@ -55,6 +55,13 @@ export default function ServiciosPage() {
   const [formNuevoTipo, setFormNuevoTipo] = useState({ nombre: "", precio: 0 });
   const [savingNuevoTipo, setSavingNuevoTipo] = useState(false);
 
+  /* Gestión tipos (SV-004) */
+  const [showGestion, setShowGestion] = useState(false);
+  const [tipoAEditar, setTipoAEditar] = useState<TipoServicio | null>(null);
+  const [formEditar, setFormEditar] = useState({ nombre: "", precio: 0 });
+  const [savingEditar, setSavingEditar] = useState(false);
+  const [tipoAEliminar, setTipoAEliminar] = useState<TipoServicio | null>(null);
+
   /* ─── Fetch ──────────────────────────────────── */
   const fetchServicios = useCallback(async () => {
     setLoading(true);
@@ -271,6 +278,66 @@ export default function ServiciosPage() {
     }
   };
 
+  /* ─── Gestión tipos (SV-004) ────────────────── */
+  const openEditar = (tipo: TipoServicio) => {
+    setFormEditar({ nombre: tipo.nombre, precio: tipo.precio });
+    setTipoAEditar(tipo);
+  };
+
+  const closeEditar = () => {
+    setTipoAEditar(null);
+    setFormEditar({ nombre: "", precio: 0 });
+  };
+
+  const handleActualizarTipo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!tipoAEditar || !formEditar.nombre.trim()) return;
+
+    setSavingEditar(true);
+    try {
+      const res = await fetch(`${API}/configuraciones/${tipoAEditar.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nombreServicio: formEditar.nombre.trim(),
+          precioBase: formEditar.precio,
+        }),
+      });
+
+      const data = await res.json().catch(() => null);
+      if (res.status === 409) throw new Error("Ya existe un tipo de servicio con ese nombre.");
+      if (res.status === 404) throw new Error("El tipo de servicio no existe o fue eliminado.");
+      if (!res.ok) throw new Error(data?.message || "Error al actualizar.");
+
+      await fetchTipos();
+      closeEditar();
+      showToast("Tipo de servicio actualizado correctamente.", "success");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Error inesperado";
+      showToast(msg, "error");
+    } finally {
+      setSavingEditar(false);
+    }
+  };
+
+  const handleEliminarTipo = async () => {
+    if (!tipoAEliminar) return;
+
+    try {
+      const res = await fetch(`${API}/configuraciones/${tipoAEliminar.id}`, { method: "DELETE" });
+      const data = await res.json().catch(() => null);
+      if (res.status === 404) throw new Error("El tipo de servicio no existe o ya fue eliminado.");
+      if (!res.ok) throw new Error(data?.message || "Error al eliminar.");
+
+      await fetchTipos();
+      setTipoAEliminar(null);
+      showToast("Tipo de servicio eliminado correctamente.", "success");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Error inesperado";
+      showToast(msg, "error");
+    }
+  };
+
   /* ─── Derived ────────────────────────────────── */
   const totalServicios = servicios.length;
   const totalMonto = servicios.reduce((sum, s) => sum + s.monto, 0);
@@ -302,6 +369,12 @@ export default function ServiciosPage() {
             onClick={() => router.push("/dashboard")}
           >
             ← Volver
+          </button>
+          <button
+            className={`${styles.btn} ${styles.btnSecondary}`}
+            onClick={() => setShowGestion(true)}
+          >
+            Gestionar tipos
           </button>
           <button
             id="btn-add"
@@ -565,6 +638,146 @@ export default function ServiciosPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── Gestión de tipos (SV-004) ───────────── */}
+      {showGestion && (
+        <div className={styles.overlay} onClick={() => setShowGestion(false)}>
+          <div className={styles.modalWide} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2 className={styles.modalTitle}>Gestionar tipos de servicio</h2>
+              <button
+                type="button"
+                className={styles.btnClose}
+                onClick={() => setShowGestion(false)}
+              >
+                ×
+              </button>
+            </div>
+
+            {tipos.length === 0 ? (
+              <p className={styles.emptyState}>No hay tipos de servicio registrados.</p>
+            ) : (
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Precio base</th>
+                    <th style={{ textAlign: "right" }}>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {tipos.map((t) => (
+                    <tr key={t.id}>
+                      <td>{t.nombre}</td>
+                      <td>{fmtPrecio(t.precio)}</td>
+                      <td>
+                        <div className={styles.tdActions}>
+                          <button
+                            className={`${styles.btn} ${styles.btnSecondary} ${styles.btnSmall}`}
+                            onClick={() => openEditar(t)}
+                          >
+                            Editar
+                          </button>
+                          <button
+                            className={`${styles.btn} ${styles.btnDanger} ${styles.btnSmall}`}
+                            onClick={() => setTipoAEliminar(t)}
+                          >
+                            Eliminar
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Editar tipo (SV-004) ─────────────────── */}
+      {tipoAEditar && (
+        <div className={styles.overlayNested} onClick={closeEditar}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <h2 className={styles.modalTitle}>Editar tipo de servicio</h2>
+
+            <form className={styles.form} onSubmit={handleActualizarTipo}>
+              <div className={styles.field}>
+                <label className={styles.label} htmlFor="inp-edit-nombre">Nombre</label>
+                <input
+                  id="inp-edit-nombre"
+                  className={styles.input}
+                  type="text"
+                  value={formEditar.nombre}
+                  onChange={(e) => setFormEditar({ ...formEditar, nombre: e.target.value })}
+                  required
+                  autoFocus
+                  maxLength={100}
+                />
+              </div>
+              <div className={styles.field}>
+                <label className={styles.label} htmlFor="inp-edit-precio">Precio base (₡)</label>
+                <input
+                  id="inp-edit-precio"
+                  className={styles.input}
+                  type="number"
+                  min={0}
+                  step={0.01}
+                  value={formEditar.precio}
+                  onChange={(e) => setFormEditar({ ...formEditar, precio: Number(e.target.value) })}
+                  required
+                />
+              </div>
+              <div className={styles.modalActions}>
+                <button
+                  type="button"
+                  className={`${styles.btn} ${styles.btnSecondary}`}
+                  onClick={closeEditar}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className={`${styles.btn} ${styles.btnPrimary}`}
+                  disabled={savingEditar}
+                >
+                  {savingEditar ? "Guardando..." : "Guardar cambios"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── Confirmar eliminar tipo (SV-004) ────── */}
+      {tipoAEliminar && (
+        <div className={styles.overlayNested} onClick={() => setTipoAEliminar(null)}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <h2 className={styles.modalTitle}>Eliminar tipo de servicio</h2>
+            <p className={styles.confirmText}>
+              ¿Está seguro que desea eliminar el tipo{" "}
+              <span className={styles.confirmName}>{tipoAEliminar.nombre}</span>?
+            </p>
+            <p className={styles.confirmNote}>
+              Los servicios ya registrados con este tipo no se verán afectados.
+            </p>
+            <div className={styles.modalActions}>
+              <button
+                className={`${styles.btn} ${styles.btnSecondary}`}
+                onClick={() => setTipoAEliminar(null)}
+              >
+                Cancelar
+              </button>
+              <button
+                className={`${styles.btn} ${styles.btnDanger}`}
+                onClick={handleEliminarTipo}
+              >
+                Eliminar
+              </button>
+            </div>
           </div>
         </div>
       )}
