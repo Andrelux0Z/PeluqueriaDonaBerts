@@ -42,6 +42,14 @@ export default function Dashboard() {
     { title: "Historial", desc: "Compras, ventas y servicios", path: "/historial" },
   ];
 
+  if (rol === "Admin") {
+    navItems.push({
+      title: "Gestión de Usuarios",
+      desc: "Creación y control de cuentas de acceso",
+      path: "/dashboard/users"
+    });
+  }
+
   return (
     <div className={styles.page}>
       <div className={styles.header}>
