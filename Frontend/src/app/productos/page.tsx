@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./productos.module.css";
 
-const API = "http://localhost:5149/api/productos";
+const API = "http://localhost:5028/api/productos";
 
 /* ─── Types ──────────────────────────────────── */
 interface Producto {
@@ -274,7 +274,7 @@ export default function ProductosPage() {
           </span>
           {bajosDeStock > 0 && (
             <span className={styles.summaryItem}>
-              ⚠ Stock bajo: <span className={styles.summaryValue}>{bajosDeStock}</span>
+              Stock bajo: <span className={styles.summaryValue}>{bajosDeStock}</span>
             </span>
           )}
         </div>

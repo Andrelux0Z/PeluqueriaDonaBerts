@@ -1,5 +1,5 @@
 /* ──────────────────────────────────────────────
-   Inventario – visual language identical to login
+   Servicios – misma estética que inventario
    ────────────────────────────────────────────── */
 
 .page {
@@ -13,9 +13,6 @@
   --bg: #f7f7f7;
   --card-bg: #ffffff;
   --font-body: "Tahoma", "Verdana", sans-serif;
-  --warning-bg: #fce8e8;
-  --warning-border: #f1c0c0;
-  --warning-text: #a12828;
 
   min-height: 100vh;
   display: flex;
@@ -27,7 +24,6 @@
   font-family: var(--font-body);
 }
 
-/* ── Header ─────────────────────────────────── */
 .header {
   width: min(720px, 94vw);
   display: flex;
@@ -46,7 +42,6 @@
   gap: 10px;
 }
 
-/* ── Buttons ────────────────────────────────── */
 .btn {
   height: 36px;
   border-radius: 4px;
@@ -61,50 +56,25 @@
   gap: 6px;
 }
 
-.btn:active {
-  transform: translateY(1px);
-}
+.btn:active { transform: translateY(1px); }
 
-.btnPrimary {
-  background: var(--accent);
-  color: #fff;
-}
-
-.btnPrimary:hover {
-  background: var(--accent-hover);
-}
+.btnPrimary { background: var(--accent); color: #fff; }
+.btnPrimary:hover { background: var(--accent-hover); }
 
 .btnSecondary {
   background: transparent;
   color: var(--muted);
   border: 1px solid var(--outline);
 }
+.btnSecondary:hover { border-color: #aaa; color: var(--ink); }
 
-.btnSecondary:hover {
-  border-color: #aaa;
-  color: var(--ink);
-}
+.btnDanger { background: var(--danger); color: #fff; }
+.btnDanger:hover { background: var(--danger-hover); }
 
-.btnDanger {
-  background: var(--danger);
-  color: #fff;
-}
+.btnSmall { height: 30px; padding: 0 14px; font-size: 13px; }
 
-.btnDanger:hover {
-  background: var(--danger-hover);
-}
-
-.btnSmall {
-  height: 30px;
-  padding: 0 14px;
-  font-size: 13px;
-}
-
-/* ── Search bar ─────────────────────────────── */
-.searchBar {
-  width: min(720px, 94vw);
-  margin-bottom: 20px;
-}
+/* ── Search ─────────────────────────────────── */
+.searchBar { width: min(720px, 94vw); margin-bottom: 20px; }
 
 .searchInput {
   width: 100%;
@@ -118,14 +88,8 @@
   font-family: var(--font-body);
 }
 
-.searchInput:focus {
-  outline: none;
-  border-color: #888;
-}
-
-.searchInput::placeholder {
-  color: #b0b0b0;
-}
+.searchInput:focus { outline: none; border-color: #888; }
+.searchInput::placeholder { color: #b0b0b0; }
 
 /* ── Table ──────────────────────────────────── */
 .tableWrapper {
@@ -136,11 +100,7 @@
   background: var(--card-bg);
 }
 
-.table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
-}
+.table { width: 100%; border-collapse: collapse; font-size: 14px; }
 
 .table th {
   text-align: left;
@@ -161,13 +121,8 @@
   vertical-align: middle;
 }
 
-.table tbody tr:last-child td {
-  border-bottom: none;
-}
-
-.table tbody tr:hover {
-  background: #fafafa;
-}
+.table tbody tr:last-child td { border-bottom: none; }
+.table tbody tr:hover { background: #fafafa; }
 
 .tdActions {
   display: flex;
@@ -175,35 +130,15 @@
   justify-content: flex-end;
 }
 
-/* ── Stock warning ──────────────────────────── */
-.stockWarning {
-  color: var(--warning-text);
-  background: var(--warning-bg);
-  border: 1px solid var(--warning-border);
-  border-radius: 3px;
-  padding: 1px 8px;
-  font-size: 13px;
-  font-weight: 600;
-  display: inline-block;
-}
-
-/* ── Empty state ────────────────────────────── */
-.emptyState {
+/* ── States ─────────────────────────────────── */
+.emptyState, .loading {
   padding: 48px 16px;
   text-align: center;
   color: var(--muted);
   font-size: 14px;
 }
 
-/* ── Loading ────────────────────────────────── */
-.loading {
-  padding: 48px 16px;
-  text-align: center;
-  color: var(--muted);
-  font-size: 14px;
-}
-
-/* ── Message toast ──────────────────────────── */
+/* ── Toast ──────────────────────────────────── */
 .toast {
   width: min(720px, 94vw);
   margin-bottom: 14px;
@@ -214,24 +149,15 @@
   animation: fadeIn 200ms ease;
 }
 
-.toastSuccess {
-  background: #e6f4ea;
-  color: #1a7431;
-  border: 1px solid #b7e1c4;
-}
-
-.toastError {
-  background: #fce8e8;
-  color: #a12828;
-  border: 1px solid #f1c0c0;
-}
+.toastSuccess { background: #e6f4ea; color: #1a7431; border: 1px solid #b7e1c4; }
+.toastError { background: #fce8e8; color: #a12828; border: 1px solid #f1c0c0; }
 
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(-6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ── Modal overlay ──────────────────────────── */
+/* ── Modal ──────────────────────────────────── */
 .overlay {
   position: fixed;
   inset: 0;
@@ -257,18 +183,8 @@
   margin-bottom: 20px;
 }
 
-/* ── Form (reuses login patterns) ───────────── */
-.form {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
+.form { display: flex; flex-direction: column; gap: 14px; }
+.field { display: flex; flex-direction: column; gap: 6px; }
 
 .label {
   font-size: 13px;
@@ -276,7 +192,7 @@
   font-weight: 500;
 }
 
-.input {
+.input, .select {
   height: 36px;
   padding: 0 12px;
   border-radius: 4px;
@@ -287,10 +203,7 @@
   font-family: var(--font-body);
 }
 
-.input:focus {
-  outline: none;
-  border-color: #888;
-}
+.input:focus, .select:focus { outline: none; border-color: #888; }
 
 .modalActions {
   display: flex;
@@ -299,7 +212,7 @@
   margin-top: 8px;
 }
 
-/* ── Confirm dialog ─────────────────────────── */
+/* ── Confirm ────────────────────────────────── */
 .confirmText {
   font-size: 14px;
   color: var(--ink);
@@ -307,11 +220,9 @@
   line-height: 1.5;
 }
 
-.confirmName {
-  font-weight: 600;
-}
+.confirmName { font-weight: 600; }
 
-/* ── Summary bar ────────────────────────────── */
+/* ── Summary ────────────────────────────────── */
 .summary {
   width: min(720px, 94vw);
   display: flex;
@@ -321,50 +232,15 @@
   color: var(--muted);
 }
 
-.summaryItem {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
+.summaryItem { display: flex; align-items: center; gap: 4px; }
+.summaryValue { font-weight: 600; color: var(--ink); }
 
-.summaryValue {
-  font-weight: 600;
-  color: var(--ink);
-}
-
-/* ── Responsive ─────────────────────────────── */
 @media (max-width: 600px) {
-  .page {
-    padding: 24px 14px 40px;
-  }
-
-  .header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-  }
-
-  .title {
-    font-size: 22px;
-  }
-
-  .table th,
-  .table td {
-    padding: 8px 10px;
-    font-size: 13px;
-  }
-
-  .tdActions {
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .modal {
-    padding: 20px;
-  }
-
-  .summary {
-    flex-direction: column;
-    gap: 8px;
-  }
+  .page { padding: 24px 14px 40px; }
+  .header { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .title { font-size: 22px; }
+  .table th, .table td { padding: 8px 10px; font-size: 13px; }
+  .tdActions { flex-direction: column; gap: 4px; }
+  .modal { padding: 20px; }
+  .summary { flex-direction: column; gap: 8px; }
 }

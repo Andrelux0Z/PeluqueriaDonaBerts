@@ -1,0 +1,136 @@
+/* ──────────────────────────────────────────────
+   Dashboard – misma estética limpia del login
+   ────────────────────────────────────────────── */
+
+.page {
+  --ink: #222222;
+  --muted: #6a6a6a;
+  --accent: #1aa04a;
+  --accent-hover: #178742;
+  --danger: #c53030;
+  --danger-hover: #a12828;
+  --outline: #dadada;
+  --bg: #f7f7f7;
+  --card-bg: #ffffff;
+  --font-body: "Tahoma", "Verdana", sans-serif;
+
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 20px;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+}
+
+/* ── Header ─────────────────────────────────── */
+.header {
+  width: min(560px, 94vw);
+  margin-bottom: 32px;
+}
+
+.title {
+  font-size: 26px;
+  font-weight: 600;
+  text-align: left;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: var(--muted);
+  margin-top: 4px;
+  text-align: left;
+}
+
+/* ── Navigation links ───────────────────────── */
+.nav {
+  width: min(560px, 94vw);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 32px;
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border: 1px solid var(--outline);
+  border-radius: 4px;
+  background: var(--card-bg);
+  cursor: pointer;
+  transition: border-color 120ms ease;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.navItem:hover {
+  border-color: var(--accent);
+}
+
+.navItem:active {
+  transform: translateY(1px);
+}
+
+.navDesc {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.navArrow {
+  color: var(--outline);
+  font-size: 14px;
+  transition: color 120ms ease;
+}
+
+.navItem:hover .navArrow {
+  color: var(--accent);
+}
+
+/* ── Logout ─────────────────────────────────── */
+.footer {
+  width: min(560px, 94vw);
+}
+
+.logout {
+  height: 36px;
+  border-radius: 4px;
+  border: 1px solid var(--outline);
+  background: transparent;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0 24px;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.logout:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.logout:active {
+  transform: translateY(1px);
+}
+
+/* ── Responsive ─────────────────────────────── */
+@media (max-width: 600px) {
+  .page {
+    padding: 24px 14px 40px;
+  }
+
+  .title {
+    font-size: 22px;
+  }
+
+  .navItem {
+    padding: 12px 16px;
+    font-size: 14px;
+  }
+}

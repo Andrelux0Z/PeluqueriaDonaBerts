@@ -37,15 +37,18 @@ namespace ProyectoBases2.Api.Controllers
 
                         // Parámetros de entrada
                         command.Parameters.Add(new SqlParameter("@inUsuario", request.Usuario));
-                        command.Parameters.Add(new SqlParameter("@inPassword", request.Password));
                         command.Parameters.Add(new SqlParameter("@inIpPostIn", remoteIp));
 
                         // Parámetros de salida
                         var outIdUsuario = new SqlParameter("@outIdUsuario", SqlDbType.Int) { Direction = ParameterDirection.Output };
                         var outResultCode = new SqlParameter("@outResultCode", SqlDbType.Int) { Direction = ParameterDirection.Output };
+                        var outPasswordHash = new SqlParameter("@outPasswordHash", SqlDbType.VarChar, 255) { Direction = ParameterDirection.Output };
+                        var outRol = new SqlParameter("@outRol", SqlDbType.VarChar, 20) { Direction = ParameterDirection.Output };
 
                         command.Parameters.Add(outIdUsuario);
                         command.Parameters.Add(outResultCode);
+                        command.Parameters.Add(outPasswordHash);
+                        command.Parameters.Add(outRol);
 
                         // Ejecutamos el Store Procedure de Login, el cual a su vez
                         // ya se encarga internamente de insertar los logs correspondientes en BitacoraEventos
@@ -53,34 +56,54 @@ namespace ProyectoBases2.Api.Controllers
 
                         int resultCode = (int)outResultCode.Value;
                         int idUsuario = (int)outIdUsuario.Value;
+                        string dbPasswordHash = outPasswordHash.Value?.ToString() ?? "";
+                        string rol = outRol.Value?.ToString() ?? "";
 
-                        if (resultCode == 0) // Asumimos que 0 significa que todo salió bien y las credenciales son válidas
-                        {
-                            // En un entorno de bajo nivel o uso académico, se envía simplemente el OK.
-                            // Aquí el frontend guardará un registro básico en el navegador y avanzará.
-                            return Ok(new { success = true, idUsuario = idUsuario, message = "Inicio de sesión exitoso" });
-                        }
-                        else if (resultCode == 50001)
+                        if (resultCode == 50001)
                         {
                             return BadRequest(new { success = false, message = "El usuario ingresado no existe." });
                         }
-                        else if (resultCode == 50002)
-                        {
-                            return BadRequest(new { success = false, message = "Contraseña incorrecta." });
-                        }
                         else if (resultCode == 50003)
                         {
-                            return BadRequest(new { success = false, message = "Cuenta bloqueada por múltiples intentos fallidos. Intente de nuevo en 20 minutos." });
+                            return BadRequest(new { success = false, message = "La cuenta está desactivada. Contacte al administrador." });
                         }
-                        else
+                        else if (resultCode != 0)
                         {
                             return BadRequest(new { success = false, message = "Error inesperado al iniciar sesión." });
                         }
+
+                        // Verificamos la contraseña
+                        using (var sha256 = System.Security.Cryptography.SHA256.Create())
+                        {
+                            var bytes = System.Text.Encoding.UTF8.GetBytes(request.Password);
+                            var hashBytes = sha256.ComputeHash(bytes);
+                            var hashIngresado = Convert.ToHexString(hashBytes);
+
+                            if (!string.Equals(hashIngresado, dbPasswordHash, StringComparison.OrdinalIgnoreCase) && 
+                                !string.Equals(request.Password, dbPasswordHash, StringComparison.OrdinalIgnoreCase))
+                            {
+                                return BadRequest(new 
+                                { 
+                                    success = false, 
+                                    message = "Contraseña incorrecta."
+                                });
+                            }
+                        }
+
+                        // En un entorno de bajo nivel o uso académico, se envía simplemente el OK.
+                        // Aquí el frontend guardará un registro básico en el navegador y avanzará.
+                        return Ok(new { success = true, idUsuario = idUsuario, rol = rol, message = "Inicio de sesión exitoso" });
+
                     }
                 }
             }
             catch (Exception ex)
             {
+                // Imprimimos el error completo en la consola
+                Console.WriteLine("\n=== ERROR DE BASE DE DATOS ===");
+                Console.WriteLine(ex.ToString());
+                Console.WriteLine("==============================\n");
+
                 return StatusCode(500, new { success = false, message = "Error al conectar con la base de datos.", error = ex.Message });
             }
         }

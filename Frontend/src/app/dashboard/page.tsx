@@ -1,8 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import styles from "./dashboard.module.css";
 
-const BACKEND_URL = "http://localhost:5149";
+const BACKEND_URL = "http://localhost:5028";
 
 export default function Dashboard() {
   const [username, setUsername] = useState("");
@@ -33,86 +34,46 @@ export default function Dashboard() {
     router.push("/");
   };
 
+  const navItems = [
+    { title: "Inventario", desc: "Productos, stock y precios", path: "/productos" },
+    { title: "Servicios", desc: "Registro de servicios prestados", path: "/servicios" },
+    { title: "Historial", desc: "Compras, ventas y servicios", path: "/historial" },
+  ];
+
   return (
-    <main style={{
-      minHeight: "100vh",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      fontFamily: "Tahoma, Verdana, sans-serif",
-      background: "#f7f7f7",
-      gap: "12px",
-    }}>
-      <h1 style={{ fontSize: "24px", fontWeight: 600 }}>
-        Dashboard - Bienvenido, {username}
-      </h1>
-      <p style={{ color: "#6a6a6a", fontSize: "14px", marginBottom: "20px" }}>Rol: {rol}</p>
-      
-      <div style={{ display: "flex", gap: "16px", marginBottom: "32px" }}>
-        <button
-          onClick={() => router.push("/productos")}
-          style={{
-            padding: "12px 24px",
-            borderRadius: "4px",
-            border: "none",
-            background: "#3182ce",
-            color: "#fff",
-            fontSize: "16px",
-            fontWeight: 600,
-            cursor: "pointer",
-          }}
-        >
-          Productos
-        </button>
-        <button
-          onClick={() => router.push("/servicios")}
-          style={{
-            padding: "12px 24px",
-            borderRadius: "4px",
-            border: "none",
-            background: "#3182ce",
-            color: "#fff",
-            fontSize: "16px",
-            fontWeight: 600,
-            cursor: "pointer",
-          }}
-        >
-          Servicios
-        </button>
-        <button
-          onClick={() => router.push("/historial")}
-          style={{
-            padding: "12px 24px",
-            borderRadius: "4px",
-            border: "none",
-            background: "#3182ce",
-            color: "#fff",
-            fontSize: "16px",
-            fontWeight: 600,
-            cursor: "pointer",
-          }}
-        >
-          Historial completo
-        </button>
+    <div className={styles.page}>
+      <div className={styles.header}>
+        <h1 className={styles.title}>Bienvenido, {username}</h1>
       </div>
 
-      <button
-        onClick={handleLogout}
-        style={{
-          marginTop: "8px",
-          padding: "8px 24px",
-          borderRadius: "4px",
-          border: "none",
-          background: "#c53030",
-          color: "#fff",
-          fontSize: "14px",
-          fontWeight: 600,
-          cursor: "pointer",
-        }}
-      >
-        Cerrar sesión
-      </button>
-    </main>
+      <nav className={styles.nav}>
+        {navItems.map((item) => (
+          <div
+            key={item.path}
+            className={styles.navItem}
+            onClick={() => router.push(item.path)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => e.key === "Enter" && router.push(item.path)}
+          >
+            <div>
+              {item.title}
+              <div className={styles.navDesc}>{item.desc}</div>
+            </div>
+            <span className={styles.navArrow}>→</span>
+          </div>
+        ))}
+      </nav>
+
+      <div className={styles.footer}>
+        <button
+          id="btn-logout"
+          className={styles.logout}
+          onClick={handleLogout}
+        >
+          Cerrar sesión
+        </button>
+      </div>
+    </div>
   );
 }
