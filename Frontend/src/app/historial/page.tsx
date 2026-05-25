@@ -12,6 +12,7 @@ interface Transaccion {
   fecha: string;
   monto: number;
   esAdquisicion: boolean;
+  nombreServicio: string;
 }
 
 type Filtro = "Todos" | "Compra" | "Venta" | "Servicio";
@@ -30,11 +31,25 @@ export default function HistorialPage() {
   const [filtro, setFiltro] = useState<Filtro>("Todos");
   const [fechaInicio, setFechaInicio] = useState("");
   const [fechaFin, setFechaFin] = useState("");
+  const [montoMin, setMontoMin] = useState("");
+  const [montoMax, setMontoMax] = useState("");
+  const [nombreServicio, setNombreServicio] = useState("");
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<Toast | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
+
+  useEffect(() => {
+    const isAuthenticated = localStorage.getItem("isAuthenticated");
+    if (!isAuthenticated) {
+      router.push("/");
+      return;
+    }
+
+    setAuthChecked(true);
+  }, [router]);
 
   /* ─── Fetch ──────────────────────────────────── */
-  const fetchHistorial = useCallback(async () => {
+  const fetchAll = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch(API);
@@ -49,32 +64,50 @@ export default function HistorialPage() {
     }
   }, []);
 
+  const fetchFiltered = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+
+      if (filtro !== "Todos") params.set("TipoTransaccion", filtro);
+      if (fechaInicio) params.set("FechaInicio", fechaInicio);
+      if (fechaFin) params.set("FechaFin", fechaFin);
+      if (montoMin.trim()) params.set("MontoMin", montoMin.trim());
+      if (montoMax.trim()) params.set("MontoMax", montoMax.trim());
+      if (nombreServicio.trim()) params.set("NombreServicio", nombreServicio.trim());
+
+      const query = params.toString();
+      const res = await fetch(`${API}/filtrar?${query}`);
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        throw new Error(err?.message || "Error al aplicar filtros");
+      }
+
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setHistorial(data);
+      } else if (data.historial) {
+        setHistorial(data.historial);
+      } else {
+        setHistorial([]);
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Error inesperado";
+      setToast({ message: msg, type: "error" });
+      setHistorial([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [filtro, fechaInicio, fechaFin, montoMin, montoMax, nombreServicio]);
+
   useEffect(() => {
-    fetchHistorial();
-  }, [fetchHistorial]);
+    if (authChecked) fetchAll();
+  }, [authChecked, fetchAll]);
 
   /* ─── Filter ─────────────────────────────────── */
   useEffect(() => {
-    let result = historial;
-
-    if (filtro !== "Todos") {
-      result = result.filter((t) => t.tipoTransaccion === filtro);
-    }
-
-    if (fechaInicio) {
-      const start = new Date(fechaInicio);
-      start.setHours(0, 0, 0, 0);
-      result = result.filter((t) => new Date(t.fecha) >= start);
-    }
-
-    if (fechaFin) {
-      const end = new Date(fechaFin);
-      end.setHours(23, 59, 59, 999);
-      result = result.filter((t) => new Date(t.fecha) <= end);
-    }
-
-    setFiltered(result);
-  }, [filtro, fechaInicio, fechaFin, historial]);
+    setFiltered(historial);
+  }, [historial]);
 
   /* ─── Formatting ─────────────────────────────── */
   const fmtPrecio = (n: number) =>
@@ -110,6 +143,37 @@ export default function HistorialPage() {
   const balance = totalIngresos - totalEgresos;
 
   const filtros: Filtro[] = ["Todos", "Compra", "Venta", "Servicio"];
+  const hasActiveFilters =
+    filtro !== "Todos" ||
+    Boolean(fechaInicio) ||
+    Boolean(fechaFin) ||
+    Boolean(montoMin) ||
+    Boolean(montoMax) ||
+    Boolean(nombreServicio.trim());
+
+  /* ─── Actions ────────────────────────────────── */
+  const aplicarFiltros = async () => {
+    if (!hasActiveFilters) {
+      setToast({ message: "Ingrese al menos un criterio para aplicar filtros.", type: "error" });
+      return;
+    }
+
+    await fetchFiltered();
+  };
+
+  const limpiarFiltros = async () => {
+    setFiltro("Todos");
+    setFechaInicio("");
+    setFechaFin("");
+    setMontoMin("");
+    setMontoMax("");
+    setNombreServicio("");
+    await fetchAll();
+  };
+
+  if (!authChecked) {
+    return null;
+  }
 
   /* ─── Render ─────────────────────────────────── */
   return (
@@ -160,6 +224,50 @@ export default function HistorialPage() {
             onChange={(e) => setFechaFin(e.target.value)}
           />
         </div>
+        <div className={styles.filterDateGroup}>
+          <label className={styles.filterDateLabel}>Monto mín.:</label>
+          <input
+            type="number"
+            inputMode="decimal"
+            step="0.01"
+            className={styles.filterDate}
+            value={montoMin}
+            onChange={(e) => setMontoMin(e.target.value)}
+          />
+        </div>
+        <div className={styles.filterDateGroup}>
+          <label className={styles.filterDateLabel}>Monto máx.:</label>
+          <input
+            type="number"
+            inputMode="decimal"
+            step="0.01"
+            className={styles.filterDate}
+            value={montoMax}
+            onChange={(e) => setMontoMax(e.target.value)}
+          />
+        </div>
+        <div className={styles.filterDateGroup}>
+          <label className={styles.filterDateLabel}>Servicio:</label>
+          <input
+            type="text"
+            className={`${styles.filterDate} ${styles.filterText}`}
+            value={nombreServicio}
+            placeholder="Nombre del servicio"
+            onChange={(e) => setNombreServicio(e.target.value)}
+          />
+        </div>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <button className={`${styles.btn} ${styles.btnPrimary}`} onClick={aplicarFiltros}>
+            Aplicar filtros
+          </button>
+          <button
+            className={`${styles.btn} ${styles.btnSecondary}`}
+            onClick={limpiarFiltros}
+            disabled={!hasActiveFilters}
+          >
+            Limpiar filtros
+          </button>
+        </div>
       </div>
 
       {/* Table */}
@@ -168,8 +276,8 @@ export default function HistorialPage() {
           <div className={styles.loading}>Cargando historial...</div>
         ) : filtered.length === 0 ? (
           <div className={styles.emptyState}>
-            {filtro !== "Todos"
-              ? `No hay transacciones de tipo "${filtro}".`
+            {hasActiveFilters
+              ? "No hay transacciones que coincidan con los filtros aplicados."
               : "No hay transacciones registradas."}
           </div>
         ) : (
@@ -178,6 +286,7 @@ export default function HistorialPage() {
               <tr>
                 <th>Tipo</th>
                 <th>Ref.</th>
+                <th>Servicio</th>
                 <th>Fecha</th>
                 <th style={{ textAlign: "right" }}>Monto</th>
               </tr>
@@ -191,6 +300,7 @@ export default function HistorialPage() {
                     </span>
                   </td>
                   <td>#{t.idReferencia}</td>
+                  <td>{t.nombreServicio || "—"}</td>
                   <td>{fmtFecha(t.fecha)}</td>
                   <td style={{ textAlign: "right" }}>
                     <span className={t.esAdquisicion ? styles.montoOut : styles.montoIn}>
