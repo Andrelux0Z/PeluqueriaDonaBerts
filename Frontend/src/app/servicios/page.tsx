@@ -52,7 +52,16 @@ export default function ServiciosPage() {
     try {
       const res = await fetch(API);
       if (!res.ok) throw new Error();
-      const data: Servicio[] = await res.json();
+      const rawData = await res.json();
+      
+      // Mapeamos los datos para adaptarnos a las estructuras de ambos desarrolladores
+      const data: Servicio[] = rawData.map((d: any) => ({
+        id: d.id,
+        nombre: d.tipoServicio || d.nombreLibre,
+        fecha: d.fecha,
+        monto: d.monto,
+      }));
+
       setServicios(data);
       setFiltered(data);
     } catch {
@@ -66,9 +75,15 @@ export default function ServiciosPage() {
 
   const fetchTipos = useCallback(async () => {
     try {
-      const res = await fetch(`${API}/tipos`);
+      const res = await fetch(`${API}/configuraciones`);
       if (!res.ok) throw new Error();
-      setTipos(await res.json());
+      const rawTipos = await res.json();
+      
+      setTipos(rawTipos.map((t: any) => ({
+        id: t.id,
+        nombre: t.nombreServicio,
+        precio: t.precioBase
+      })));
     } catch {}
   }, []);
 
@@ -128,9 +143,16 @@ export default function ServiciosPage() {
 
     setSaving(true);
     try {
-      const body = usarNombreLibre
-        ? { idTipoServicio: null, nombreLibre: form.nombreLibre, monto: form.monto }
-        : { idTipoServicio: form.idTipoServicio, nombreLibre: null, monto: form.monto };
+      const idUsuario = parseInt(localStorage.getItem("idUsuario") || "1");
+      const descripcionDefault = tipos.find((t) => t.id === form.idTipoServicio)?.nombre || "Servicio genérico";
+
+      const body = {
+        fecha: new Date().toISOString(),
+        descripcion: usarNombreLibre ? form.nombreLibre : descripcionDefault,
+        montoCobrado: form.monto,
+        idConfiguracion: usarNombreLibre ? null : form.idTipoServicio,
+        idPostByUser: idUsuario
+      };
 
       const res = await fetch(API, {
         method: "POST",

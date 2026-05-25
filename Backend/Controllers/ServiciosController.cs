@@ -1,4 +1,5 @@
 using System.Data;
+using Backend.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 
@@ -8,145 +9,148 @@ namespace Backend.Controllers;
 [Route("api/servicios")]
 public class ServiciosController(IConfiguration config) : ControllerBase
 {
-    /// <summary>
-    /// Obtiene todos los servicios registrados.
-    /// </summary>
-    [HttpGet]
-    public async Task<IActionResult> GetAll()
+    private readonly string _connStr = config.GetConnectionString("DefaultConnection")!;
+
+    [HttpPost]
+    public IActionResult RegistrarServicio([FromBody] RegistrarServicioRequestDto request)
     {
-        string connStr = config.GetConnectionString("DefaultConnection")!;
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        if (request.Fecha == default)
+            return BadRequest(new { message = "La fecha no es válida." });
+
+        if (request.MontoCobrado < 0)
+            return BadRequest(new { message = "El monto no puede ser negativo." });
 
         try
         {
-            await using var conn = new SqlConnection(connStr);
-            await conn.OpenAsync();
+            string remoteIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";
 
-            await using var cmd = new SqlCommand("dbo.sp_ListarServicios", conn)
+            using var conn = new SqlConnection(_connStr);
+            conn.Open();
+            using var cmd = new SqlCommand("dbo.sp_RegistrarServicio", conn)
             {
                 CommandType = CommandType.StoredProcedure
             };
 
-            var reader = await cmd.ExecuteReaderAsync();
-            var servicios = new List<object>();
+            cmd.Parameters.AddWithValue("@inIdTipoServicio", request.IdConfiguracion ?? 0);
+            cmd.Parameters.AddWithValue("@inNombreLibre", request.Descripcion);
+            cmd.Parameters.AddWithValue("@inFecha", request.Fecha);
+            cmd.Parameters.AddWithValue("@inMonto", request.MontoCobrado);
+            cmd.Parameters.AddWithValue("@inIdPostByUser", request.IdPostByUser ?? 0);
+            cmd.Parameters.AddWithValue("@inIpPostIn", remoteIp);
 
-            while (await reader.ReadAsync())
+            var pResultCode = new SqlParameter("@outResultCode", SqlDbType.Int) { Direction = ParameterDirection.Output };
+            var pIdServicio  = new SqlParameter("@outIdServicio",  SqlDbType.Int) { Direction = ParameterDirection.Output };
+            cmd.Parameters.Add(pResultCode);
+            cmd.Parameters.Add(pIdServicio);
+
+            cmd.ExecuteNonQuery();
+
+            int resultCode = (int)pResultCode.Value;
+            if (resultCode != 0)
+                return StatusCode(500, new { message = "Error al registrar el servicio en la base de datos." });
+
+            int idServicio = (int)pIdServicio.Value;
+            return CreatedAtAction(nameof(RegistrarServicio), new { id = idServicio, message = "Servicio registrado correctamente." });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Error de conexión con la base de datos.", error = ex.Message });
+        }
+    }
+
+    [HttpGet]
+    public IActionResult ObtenerHistorial()
+    {
+        try
+        {
+            using var conn = new SqlConnection(_connStr);
+            conn.Open();
+            using var cmd = new SqlCommand("dbo.sp_ObtenerHistorialServicios", conn)
             {
-                servicios.Add(new
+                CommandType = CommandType.StoredProcedure
+            };
+
+            var pResultCode = new SqlParameter("@outResultCode", SqlDbType.Int) { Direction = ParameterDirection.Output };
+            cmd.Parameters.Add(pResultCode);
+
+            var servicios = new List<ServicioResponseDto>();
+            using var reader = cmd.ExecuteReader();
+            while (reader.Read())
+            {
+                servicios.Add(new ServicioResponseDto
                 {
-                    id = reader.GetInt32(reader.GetOrdinal("Id")),
-                    nombre = reader.GetString(reader.GetOrdinal("Nombre")),
-                    fecha = reader.GetDateTime(reader.GetOrdinal("Fecha")),
-                    monto = reader.GetDecimal(reader.GetOrdinal("Monto"))
+                    Id           = reader.GetInt32(reader.GetOrdinal("Id")),
+                    Fecha        = reader.GetDateTime(reader.GetOrdinal("Fecha")),
+                    TipoServicio = reader.IsDBNull(reader.GetOrdinal("TipoServicio")) ? "" : reader.GetString(reader.GetOrdinal("TipoServicio")),
+                    NombreLibre  = reader.GetString(reader.GetOrdinal("NombreLibre")),
+                    Monto        = reader.GetDecimal(reader.GetOrdinal("Monto"))
                 });
             }
+
+            reader.Close();
+            int resultCode = (int)pResultCode.Value;
+            if (resultCode != 0)
+                return StatusCode(500, new { message = "Error al obtener el historial de servicios." });
 
             return Ok(servicios);
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = "Error al obtener servicios.", detail = ex.Message });
+            return StatusCode(500, new { message = "Error de conexión con la base de datos.", error = ex.Message });
         }
     }
 
-    /// <summary>
-    /// Obtiene los tipos de servicio para el dropdown.
-    /// </summary>
-    [HttpGet("tipos")]
-    public async Task<IActionResult> GetTipos()
+    [HttpGet("configuraciones")]
+    public IActionResult ObtenerConfiguraciones()
     {
-        string connStr = config.GetConnectionString("DefaultConnection")!;
-
         try
         {
-            await using var conn = new SqlConnection(connStr);
-            await conn.OpenAsync();
-
-            await using var cmd = new SqlCommand(
-                "SELECT Id, Nombre, Precio FROM dbo.TipoServicio WHERE EsActivo = 1 ORDER BY Nombre", conn);
-
-            var reader = await cmd.ExecuteReaderAsync();
-            var tipos = new List<object>();
-
-            while (await reader.ReadAsync())
-            {
-                tipos.Add(new
-                {
-                    id = reader.GetInt32(0),
-                    nombre = reader.GetString(1),
-                    precio = reader.GetDecimal(2)
-                });
-            }
-
-            return Ok(tipos);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Error al obtener tipos de servicio.", detail = ex.Message });
-        }
-    }
-
-    /// <summary>
-    /// Registra un nuevo servicio.
-    /// </summary>
-    [HttpPost]
-    public async Task<IActionResult> Create([FromBody] ServicioRequest request)
-    {
-        string connStr = config.GetConnectionString("DefaultConnection")!;
-
-        try
-        {
-            await using var conn = new SqlConnection(connStr);
-            await conn.OpenAsync();
-
-            await using var cmd = new SqlCommand("dbo.sp_InsertarServicio", conn)
+            using var conn = new SqlConnection(_connStr);
+            conn.Open();
+            using var cmd = new SqlCommand("dbo.sp_ObtenerTiposServicio", conn)
             {
                 CommandType = CommandType.StoredProcedure
             };
 
-            if (request.IdTipoServicio.HasValue)
-                cmd.Parameters.AddWithValue("@inIdTipoServicio", request.IdTipoServicio.Value);
-            else
-                cmd.Parameters.AddWithValue("@inIdTipoServicio", DBNull.Value);
-
-            if (!string.IsNullOrEmpty(request.NombreLibre))
-                cmd.Parameters.AddWithValue("@inNombreLibre", request.NombreLibre);
-            else
-                cmd.Parameters.AddWithValue("@inNombreLibre", DBNull.Value);
-
-            cmd.Parameters.AddWithValue("@inMonto", request.Monto);
-
             var pResultCode = new SqlParameter("@outResultCode", SqlDbType.Int) { Direction = ParameterDirection.Output };
             cmd.Parameters.Add(pResultCode);
 
-            await cmd.ExecuteNonQueryAsync();
+            var configuraciones = new List<object>();
+            using var reader = cmd.ExecuteReader();
+            while (reader.Read())
+            {
+                configuraciones.Add(new
+                {
+                    id             = reader.GetInt32(reader.GetOrdinal("Id")),
+                    nombreServicio = reader.GetString(reader.GetOrdinal("NombreServicio")),
+                    precioBase     = reader.GetDecimal(reader.GetOrdinal("PrecioBase"))
+                });
+            }
 
+            reader.Close();
             int resultCode = (int)pResultCode.Value;
-
             if (resultCode != 0)
-                return BadRequest(new { message = "Error al registrar el servicio.", code = resultCode });
+                return StatusCode(500, new { message = "Error al obtener las configuraciones de servicio." });
 
-            return Ok(new { message = "Servicio registrado exitosamente." });
+            return Ok(configuraciones);
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = "Error al registrar el servicio.", detail = ex.Message });
+            return StatusCode(500, new { message = "Error de conexión con la base de datos.", error = ex.Message });
         }
     }
 
-    /// <summary>
-    /// Elimina un servicio.
-    /// </summary>
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(int id)
+    public IActionResult EliminarServicio(int id)
     {
-        string connStr = config.GetConnectionString("DefaultConnection")!;
-
         try
         {
-            await using var conn = new SqlConnection(connStr);
-            await conn.OpenAsync();
-
-            await using var cmd = new SqlCommand("dbo.sp_EliminarServicio", conn)
+            using var conn = new SqlConnection(_connStr);
+            conn.Open();
+            using var cmd = new SqlCommand("dbo.sp_EliminarServicio", conn)
             {
                 CommandType = CommandType.StoredProcedure
             };
@@ -156,25 +160,17 @@ public class ServiciosController(IConfiguration config) : ControllerBase
             var pResultCode = new SqlParameter("@outResultCode", SqlDbType.Int) { Direction = ParameterDirection.Output };
             cmd.Parameters.Add(pResultCode);
 
-            await cmd.ExecuteNonQueryAsync();
+            cmd.ExecuteNonQuery();
 
             int resultCode = (int)pResultCode.Value;
-
             if (resultCode != 0)
-                return BadRequest(new { message = "Error al eliminar el servicio.", code = resultCode });
+                return StatusCode(500, new { message = "Error al eliminar el servicio desde la base de datos." });
 
             return Ok(new { message = "Servicio eliminado exitosamente." });
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = "Error al eliminar el servicio.", detail = ex.Message });
+             return StatusCode(500, new { message = "Error de conexión con la base de datos.", error = ex.Message });
         }
     }
-}
-
-public class ServicioRequest
-{
-    public int? IdTipoServicio { get; set; }
-    public string? NombreLibre { get; set; }
-    public decimal Monto { get; set; }
 }
