@@ -85,7 +85,7 @@ public class ServiciosController(IConfiguration config) : ControllerBase
                     Id           = reader.GetInt32(reader.GetOrdinal("Id")),
                     Fecha        = reader.GetDateTime(reader.GetOrdinal("Fecha")),
                     TipoServicio = reader.IsDBNull(reader.GetOrdinal("TipoServicio")) ? "" : reader.GetString(reader.GetOrdinal("TipoServicio")),
-                    NombreLibre  = reader.GetString(reader.GetOrdinal("NombreLibre")),
+                    NombreLibre  = reader.IsDBNull(reader.GetOrdinal("NombreLibre")) ? "" : reader.GetString(reader.GetOrdinal("NombreLibre")),
                     Monto        = reader.GetDecimal(reader.GetOrdinal("Monto"))
                 });
             }

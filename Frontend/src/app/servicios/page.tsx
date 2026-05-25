@@ -34,6 +34,8 @@ export default function ServiciosPage() {
   const [filtered, setFiltered] = useState<Servicio[]>([]);
   const [tipos, setTipos] = useState<TipoServicio[]>([]);
   const [search, setSearch] = useState("");
+  const [fechaInicio, setFechaInicio] = useState("");
+  const [fechaFin, setFechaFin] = useState("");
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<Toast | null>(null);
 
@@ -92,15 +94,30 @@ export default function ServiciosPage() {
     fetchTipos();
   }, [fetchServicios, fetchTipos]);
 
-  /* ─── Search ─────────────────────────────────── */
+  /* ─── Search & Filter ────────────────────────── */
   useEffect(() => {
-    if (!search.trim()) {
-      setFiltered(servicios);
-      return;
+    let result = servicios;
+
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter((s) => s.nombre.toLowerCase().includes(q));
     }
-    const q = search.toLowerCase();
-    setFiltered(servicios.filter((s) => s.nombre.toLowerCase().includes(q)));
-  }, [search, servicios]);
+
+    if (fechaInicio) {
+      const start = new Date(fechaInicio);
+      // Ajustar zona horaria si es necesario, o comparar directamente
+      start.setHours(0, 0, 0, 0);
+      result = result.filter((s) => new Date(s.fecha) >= start);
+    }
+
+    if (fechaFin) {
+      const end = new Date(fechaFin);
+      end.setHours(23, 59, 59, 999);
+      result = result.filter((s) => new Date(s.fecha) <= end);
+    }
+
+    setFiltered(result);
+  }, [search, fechaInicio, fechaFin, servicios]);
 
   /* ─── Toast ──────────────────────────────────── */
   const showToast = (message: string, type: "success" | "error") => {
@@ -241,15 +258,33 @@ export default function ServiciosPage() {
         </div>
       )}
 
-      <div className={styles.searchBar}>
+      <div className={styles.filtersRow}>
         <input
           id="search-servicios"
-          className={styles.searchInput}
+          className={styles.filterInput}
           type="text"
           placeholder="Buscar servicio por nombre..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
+        <div className={styles.filterDateGroup}>
+          <label className={styles.filterDateLabel}>Desde:</label>
+          <input
+            type="date"
+            className={styles.filterDate}
+            value={fechaInicio}
+            onChange={(e) => setFechaInicio(e.target.value)}
+          />
+        </div>
+        <div className={styles.filterDateGroup}>
+          <label className={styles.filterDateLabel}>Hasta:</label>
+          <input
+            type="date"
+            className={styles.filterDate}
+            value={fechaFin}
+            onChange={(e) => setFechaFin(e.target.value)}
+          />
+        </div>
       </div>
 
       <div className={styles.tableWrapper}>

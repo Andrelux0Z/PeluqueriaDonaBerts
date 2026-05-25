@@ -28,6 +28,8 @@ export default function HistorialPage() {
   const [historial, setHistorial] = useState<Transaccion[]>([]);
   const [filtered, setFiltered] = useState<Transaccion[]>([]);
   const [filtro, setFiltro] = useState<Filtro>("Todos");
+  const [fechaInicio, setFechaInicio] = useState("");
+  const [fechaFin, setFechaFin] = useState("");
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<Toast | null>(null);
 
@@ -53,12 +55,26 @@ export default function HistorialPage() {
 
   /* ─── Filter ─────────────────────────────────── */
   useEffect(() => {
-    if (filtro === "Todos") {
-      setFiltered(historial);
-    } else {
-      setFiltered(historial.filter((t) => t.tipoTransaccion === filtro));
+    let result = historial;
+
+    if (filtro !== "Todos") {
+      result = result.filter((t) => t.tipoTransaccion === filtro);
     }
-  }, [filtro, historial]);
+
+    if (fechaInicio) {
+      const start = new Date(fechaInicio);
+      start.setHours(0, 0, 0, 0);
+      result = result.filter((t) => new Date(t.fecha) >= start);
+    }
+
+    if (fechaFin) {
+      const end = new Date(fechaFin);
+      end.setHours(23, 59, 59, 999);
+      result = result.filter((t) => new Date(t.fecha) <= end);
+    }
+
+    setFiltered(result);
+  }, [filtro, fechaInicio, fechaFin, historial]);
 
   /* ─── Formatting ─────────────────────────────── */
   const fmtPrecio = (n: number) =>
@@ -115,7 +131,7 @@ export default function HistorialPage() {
         </div>
       )}
 
-      {/* Filter pills */}
+      {/* Filter pills & dates */}
       <div className={styles.filters}>
         {filtros.map((f) => (
           <button
@@ -126,6 +142,24 @@ export default function HistorialPage() {
             {f}
           </button>
         ))}
+        <div className={styles.filterDateGroup} style={{ marginLeft: "auto" }}>
+          <label className={styles.filterDateLabel}>Desde:</label>
+          <input
+            type="date"
+            className={styles.filterDate}
+            value={fechaInicio}
+            onChange={(e) => setFechaInicio(e.target.value)}
+          />
+        </div>
+        <div className={styles.filterDateGroup}>
+          <label className={styles.filterDateLabel}>Hasta:</label>
+          <input
+            type="date"
+            className={styles.filterDate}
+            value={fechaFin}
+            onChange={(e) => setFechaFin(e.target.value)}
+          />
+        </div>
       </div>
 
       {/* Table */}

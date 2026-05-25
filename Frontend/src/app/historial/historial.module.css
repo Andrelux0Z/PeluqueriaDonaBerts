@@ -97,6 +97,32 @@
   color: #fff;
 }
 
+.filterDateGroup {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.filterDate {
+  width: 130px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 4px;
+  border: 1px solid var(--outline);
+  background: var(--card-bg);
+  font-size: 13px;
+  color: var(--ink);
+  font-family: var(--font-body);
+}
+
+.filterDate:focus { outline: none; border-color: #888; }
+
+.filterDateLabel {
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
 /* ── Table ──────────────────────────────────── */
 .tableWrapper {
   width: min(760px, 94vw);
