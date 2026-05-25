@@ -77,6 +77,11 @@ namespace ProyectoBases2.Api.Controllers
             }
             catch (Exception ex)
             {
+                // Imprimimos el error completo en la consola
+                Console.WriteLine("\n=== ERROR DE BASE DE DATOS ===");
+                Console.WriteLine(ex.ToString());
+                Console.WriteLine("==============================\n");
+
                 return StatusCode(500, new { success = false, message = "Error al conectar con la base de datos.", error = ex.Message });
             }
         }

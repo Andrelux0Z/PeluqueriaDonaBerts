@@ -19,6 +19,7 @@ obj/
 *.suo
 *.userosprefs
 *.sln.docstates
+appsettings.json
 appsettings.Development.json
 appsettings.Local.json
 

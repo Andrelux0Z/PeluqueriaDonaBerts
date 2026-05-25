@@ -1,8 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import styles from "./dashboard.module.css";
 
-const BACKEND_URL = "http://localhost:5149";
+const BACKEND_URL = "http://localhost:5028";
 
 export default function Dashboard() {
   const [username, setUsername] = useState("");
@@ -35,54 +36,46 @@ export default function Dashboard() {
     router.push("/");
   };
 
+  const navItems = [
+    { title: "Inventario", desc: "Productos, stock y precios", path: "/productos" },
+    { title: "Servicios", desc: "Registro de servicios prestados", path: "/servicios" },
+    { title: "Historial", desc: "Compras, ventas y servicios", path: "/historial" },
+  ];
+
   return (
-    <main style={{
-      minHeight: "100vh",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      fontFamily: "Tahoma, Verdana, sans-serif",
-      background: "#f7f7f7",
-      gap: "12px",
-    }}>
-      <h1 style={{ fontSize: "24px", fontWeight: 600 }}>
-        Bienvenido, {username}
-      </h1>
-      <p style={{ color: "#6a6a6a", fontSize: "14px" }}>Rol: {rol}</p>
-      {rol === "Admin" && (
+    <div className={styles.page}>
+      <div className={styles.header}>
+        <h1 className={styles.title}>Bienvenido, {username}</h1>
+      </div>
+
+      <nav className={styles.nav}>
+        {navItems.map((item) => (
+          <div
+            key={item.path}
+            className={styles.navItem}
+            onClick={() => router.push(item.path)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => e.key === "Enter" && router.push(item.path)}
+          >
+            <div>
+              {item.title}
+              <div className={styles.navDesc}>{item.desc}</div>
+            </div>
+            <span className={styles.navArrow}>→</span>
+          </div>
+        ))}
+      </nav>
+
+      <div className={styles.footer}>
         <button
-          onClick={() => router.push("/dashboard/users")}
-          style={{
-            padding: "8px 24px",
-            borderRadius: "4px",
-            border: "none",
-            background: "#2a4a7f",
-            color: "#fff",
-            fontSize: "14px",
-            fontWeight: 600,
-            cursor: "pointer",
-          }}
+          id="btn-logout"
+          className={styles.logout}
+          onClick={handleLogout}
         >
-          Gestión de Usuarios
+          Cerrar sesión
         </button>
-      )}
-      <button
-        onClick={handleLogout}
-        style={{
-          marginTop: "8px",
-          padding: "8px 24px",
-          borderRadius: "4px",
-          border: "none",
-          background: "#c53030",
-          color: "#fff",
-          fontSize: "14px",
-          fontWeight: 600,
-          cursor: "pointer",
-        }}
-      >
-        Cerrar sesión
-      </button>
-    </main>
+      </div>
+    </div>
   );
 }
