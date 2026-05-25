@@ -1,7 +1,13 @@
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Configurar los controladores
 builder.Services.AddControllers();
+
+// Registrar AppDbContext con la cadena de conexión
+builder.Services.AddDbContext<Backend.Data.AppDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Configurar CORS para permitir que el frontend se comunique
 builder.Services.AddCors(options =>

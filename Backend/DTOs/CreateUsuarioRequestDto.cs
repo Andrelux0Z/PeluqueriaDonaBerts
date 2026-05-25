@@ -5,7 +5,7 @@ namespace Backend.DTOs;
 public class CreateUsuarioRequestDto
 {
     [Required(ErrorMessage = "El nombre de usuario es obligatorio.")]
-    [MaxLength(50)]
+    [MaxLength(50, ErrorMessage = "El nombre de usuario no puede superar los 50 caracteres.")]
     public string Username { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "La contraseña es obligatoria.")]
@@ -16,6 +16,6 @@ public class CreateUsuarioRequestDto
     public string ConfirmPassword { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "El nivel de acceso es obligatorio.")]
-    [MaxLength(20)]
+    [RegularExpression("^(Admin|Empleado)$", ErrorMessage = "El rol debe ser 'Admin' o 'Empleado'.")]
     public string Rol { get; set; } = string.Empty;
 }

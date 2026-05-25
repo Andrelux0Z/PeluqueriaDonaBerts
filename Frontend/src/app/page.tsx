@@ -34,13 +34,8 @@ export default function Home() {
         // Almacenamiento de estado de sesión en cliente
         localStorage.setItem("isAuthenticated", "true");
         localStorage.setItem("idUsuario", data.idUsuario.toString());
-        // El dashboard espera un token, username y rol.
-        // Dado que usamos el LoginController básico, emulamos la información.
-        localStorage.setItem("token", "token_basico_academico");
         localStorage.setItem("username", username);
-        localStorage.setItem("rol", data.rol ?? ""); 
-        
-        // Redireccionamiento posterior al inicio de sesión
+        localStorage.setItem("rol", data.rol);
         router.push("/dashboard");
       } else {
         if (data.message) {

@@ -11,8 +11,8 @@ export default function Dashboard() {
   const router = useRouter();
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
+    const isAuthenticated = localStorage.getItem("isAuthenticated");
+    if (!isAuthenticated) {
       router.push("/");
       return;
     }
@@ -21,14 +21,16 @@ export default function Dashboard() {
   }, [router]);
 
   const handleLogout = async () => {
-    const token = localStorage.getItem("token");
+    const idUsuario = parseInt(localStorage.getItem("idUsuario") ?? "0");
     try {
-      await fetch(`${BACKEND_URL}/api/auth/logout`, {
+      await fetch(`http://localhost:5028/api/login/logout`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idUsuario }),
       });
     } catch {}
-    localStorage.removeItem("token");
+    localStorage.removeItem("isAuthenticated");
+    localStorage.removeItem("idUsuario");
     localStorage.removeItem("username");
     localStorage.removeItem("rol");
     router.push("/");
