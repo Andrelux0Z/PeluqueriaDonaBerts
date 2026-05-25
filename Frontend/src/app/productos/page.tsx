@@ -8,6 +8,7 @@ const API = "http://localhost:5028/api/productos";
 /* ─── Types ──────────────────────────────────── */
 interface Producto {
   id: number;
+  codigo: string;
   nombre: string;
   cantidad: number;
   precio: number;
@@ -28,6 +29,12 @@ export default function ProductosPage() {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [filtered, setFiltered] = useState<Producto[]>([]);
   const [search, setSearch] = useState("");
+  const [codigo, setCodigo] = useState("");
+  const [precioMin, setPrecioMin] = useState("");
+  const [precioMax, setPrecioMax] = useState("");
+  const [cantidadMin, setCantidadMin] = useState("");
+  const [cantidadMax, setCantidadMax] = useState("");
+  const [hasActiveFilters, setHasActiveFilters] = useState(false);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<Toast | null>(null);
 
@@ -62,15 +69,71 @@ export default function ProductosPage() {
     fetchProductos();
   }, [fetchProductos]);
 
-  /* ─── Search filter ──────────────────────────── */
-  useEffect(() => {
-    if (!search.trim()) {
-      setFiltered(productos);
+  const limpiarFiltros = () => {
+    setSearch("");
+    setCodigo("");
+    setPrecioMin("");
+    setPrecioMax("");
+    setCantidadMin("");
+    setCantidadMax("");
+    setHasActiveFilters(false);
+    setFiltered(productos);
+  };
+
+  const aplicarFiltros = async () => {
+    const nombre = search.trim();
+    const cod = codigo.trim();
+    const pMin = precioMin.trim();
+    const pMax = precioMax.trim();
+    const cMin = cantidadMin.trim();
+    const cMax = cantidadMax.trim();
+
+    if (!nombre && !cod && !pMin && !pMax && !cMin && !cMax) {
+      showToast("Debe ingresar al menos un criterio de búsqueda.", "error");
       return;
     }
-    const q = search.toLowerCase();
-    setFiltered(productos.filter((p) => p.nombre.toLowerCase().includes(q)));
-  }, [search, productos]);
+
+    if (pMin && pMax && Number(pMin) > Number(pMax)) {
+      showToast("El rango de precio es inválido.", "error");
+      return;
+    }
+
+    if (cMin && cMax && Number(cMin) > Number(cMax)) {
+      showToast("El rango de cantidad es inválido.", "error");
+      return;
+    }
+
+    const params = new URLSearchParams();
+    if (nombre) params.set("Nombre", nombre);
+    if (cod) params.set("Codigo", cod);
+    if (pMin) params.set("PrecioMin", pMin);
+    if (pMax) params.set("PrecioMax", pMax);
+    if (cMin) params.set("CantidadMin", cMin);
+    if (cMax) params.set("CantidadMax", cMax);
+
+    setLoading(true);
+    try {
+      const res = await fetch(`${API}/filtrar?${params.toString()}`);
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        throw new Error(data?.message || "No se pudieron aplicar los filtros");
+      }
+
+      if (Array.isArray(data)) {
+        setFiltered(data);
+      } else {
+        setFiltered(data?.productos ?? []);
+      }
+
+      setHasActiveFilters(true);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Error inesperado";
+      showToast(msg, "error");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   /* ─── Toast ──────────────────────────────────── */
   const showToast = (message: string, type: "success" | "error") => {
@@ -198,16 +261,84 @@ export default function ProductosPage() {
         </div>
       )}
 
-      {/* Search */}
+      {/* Filters */}
       <div className={styles.searchBar}>
-        <input
-          id="search-productos"
-          className={styles.searchInput}
-          type="text"
-          placeholder="Buscar producto por nombre..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+        <div className={styles.filterGrid}>
+          <input
+            id="search-productos"
+            className={styles.searchInput}
+            type="text"
+            placeholder="Nombre del producto"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <input
+            id="search-codigo"
+            className={styles.searchInput}
+            type="text"
+            placeholder="Código"
+            value={codigo}
+            onChange={(e) => setCodigo(e.target.value)}
+          />
+          <input
+            id="search-precio-min"
+            className={styles.searchInput}
+            type="number"
+            min={0}
+            step={0.01}
+            placeholder="Precio mínimo"
+            value={precioMin}
+            onChange={(e) => setPrecioMin(e.target.value)}
+          />
+          <input
+            id="search-precio-max"
+            className={styles.searchInput}
+            type="number"
+            min={0}
+            step={0.01}
+            placeholder="Precio máximo"
+            value={precioMax}
+            onChange={(e) => setPrecioMax(e.target.value)}
+          />
+          <input
+            id="search-cantidad-min"
+            className={styles.searchInput}
+            type="number"
+            min={0}
+            step={1}
+            placeholder="Cantidad mínima"
+            value={cantidadMin}
+            onChange={(e) => setCantidadMin(e.target.value)}
+          />
+          <input
+            id="search-cantidad-max"
+            className={styles.searchInput}
+            type="number"
+            min={0}
+            step={1}
+            placeholder="Cantidad máxima"
+            value={cantidadMax}
+            onChange={(e) => setCantidadMax(e.target.value)}
+          />
+        </div>
+
+        <div className={styles.filterActions}>
+          <button
+            className={`${styles.btn} ${styles.btnPrimary}`}
+            type="button"
+            onClick={aplicarFiltros}
+          >
+            Aplicar filtros
+          </button>
+          <button
+            className={`${styles.btn} ${styles.btnSecondary}`}
+            type="button"
+            onClick={limpiarFiltros}
+            disabled={!hasActiveFilters}
+          >
+            Limpiar filtros
+          </button>
+        </div>
       </div>
 
       {/* Table */}
@@ -216,12 +347,15 @@ export default function ProductosPage() {
           <div className={styles.loading}>Cargando productos...</div>
         ) : filtered.length === 0 ? (
           <div className={styles.emptyState}>
-            {search ? "No se encontraron resultados." : "No hay productos registrados."}
+            {hasActiveFilters
+              ? "No se encontraron resultados para los filtros aplicados."
+              : "No hay productos registrados."}
           </div>
         ) : (
           <table className={styles.table}>
             <thead>
               <tr>
+                <th>Código</th>
                 <th>Producto</th>
                 <th>Cantidad</th>
                 <th>Precio</th>
@@ -231,6 +365,7 @@ export default function ProductosPage() {
             <tbody>
               {filtered.map((p) => (
                 <tr key={p.id}>
+                  <td>{p.codigo}</td>
                   <td>{p.nombre}</td>
                   <td>
                     {p.cantidad <= p.stockMinimo ? (

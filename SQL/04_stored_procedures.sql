@@ -31,12 +31,53 @@ BEGIN
 
     SELECT
         Id,
+        Codigo,
         Nombre,
         Stock        AS Cantidad,     -- el controlador espera "Cantidad"
         PrecioVenta  AS Precio,       -- el controlador espera "Precio"
         StockMinimo
     FROM dbo.Producto
     WHERE EsActivo = 1
+    ORDER BY Nombre;
+END;
+GO
+
+-- ════════════════════════════════════════════════════════════════
+-- 1.1 sp_FiltrarProductos
+--    Devuelve productos activos aplicando filtros por nombre, código,
+--    rango de precio y rango de cantidad.
+-- ════════════════════════════════════════════════════════════════
+
+IF OBJECT_ID('dbo.sp_FiltrarProductos', 'P') IS NOT NULL
+    DROP PROCEDURE dbo.sp_FiltrarProductos;
+GO
+
+CREATE PROCEDURE dbo.sp_FiltrarProductos
+    @inNombre       VARCHAR(100) = NULL,
+    @inCodigo       VARCHAR(50)  = NULL,
+    @inPrecioMin    DECIMAL(10,2) = NULL,
+    @inPrecioMax    DECIMAL(10,2) = NULL,
+    @inCantidadMin  INT = NULL,
+    @inCantidadMax  INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        Id,
+        Codigo,
+        Nombre,
+        Stock        AS Cantidad,
+        PrecioVenta  AS Precio,
+        StockMinimo
+    FROM dbo.Producto
+    WHERE EsActivo = 1
+      AND (@inNombre IS NULL OR Nombre LIKE '%' + @inNombre + '%')
+      AND (@inCodigo IS NULL OR Codigo LIKE '%' + @inCodigo + '%')
+      AND (@inPrecioMin IS NULL OR PrecioVenta >= @inPrecioMin)
+      AND (@inPrecioMax IS NULL OR PrecioVenta <= @inPrecioMax)
+      AND (@inCantidadMin IS NULL OR Stock >= @inCantidadMin)
+      AND (@inCantidadMax IS NULL OR Stock <= @inCantidadMax)
     ORDER BY Nombre;
 END;
 GO

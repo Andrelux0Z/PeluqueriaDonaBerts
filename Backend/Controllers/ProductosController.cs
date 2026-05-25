@@ -1,4 +1,5 @@
 using System.Data;
+using Backend.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 
@@ -14,30 +15,67 @@ public class ProductosController(IConfiguration config) : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
-        string connStr = config.GetConnectionString("DefaultConnection")!;
+        try
+        {
+            var productos = await ObtenerProductosAsync("dbo.sp_ListarProductos");
+            return Ok(productos);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Error al obtener productos.", detail = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Filtra productos por nombre, código, precio o cantidad.
+    /// </summary>
+    [HttpGet("filtrar")]
+    public async Task<IActionResult> Filtrar([FromQuery] FiltroProductosQueryDto filtro)
+    {
+        if (!filtro.TieneAlgunCriterio)
+        {
+            return BadRequest(new
+            {
+                message = "Debe ingresar al menos un criterio de búsqueda."
+            });
+        }
+
+        if (filtro.PrecioMin.HasValue && filtro.PrecioMax.HasValue && filtro.PrecioMin > filtro.PrecioMax)
+        {
+            return BadRequest(new
+            {
+                message = "El rango de precio es inválido: el mínimo no puede ser mayor que el máximo."
+            });
+        }
+
+        if (filtro.CantidadMin.HasValue && filtro.CantidadMax.HasValue && filtro.CantidadMin > filtro.CantidadMax)
+        {
+            return BadRequest(new
+            {
+                message = "El rango de cantidad es inválido: el mínimo no puede ser mayor que el máximo."
+            });
+        }
 
         try
         {
-            await using var conn = new SqlConnection(connStr);
-            await conn.OpenAsync();
-
-            await using var cmd = new SqlCommand("dbo.sp_ListarProductos", conn)
-            {
-                CommandType = CommandType.StoredProcedure
-            };
-
-            var reader = await cmd.ExecuteReaderAsync();
-            var productos = new List<object>();
-
-            while (await reader.ReadAsync())
-            {
-                productos.Add(new
+            var productos = await ObtenerProductosAsync(
+                "dbo.sp_FiltrarProductos",
+                cmd =>
                 {
-                    id = reader.GetInt32(reader.GetOrdinal("Id")),
-                    nombre = reader.GetString(reader.GetOrdinal("Nombre")),
-                    cantidad = reader.GetInt32(reader.GetOrdinal("Cantidad")),
-                    precio = reader.GetDecimal(reader.GetOrdinal("Precio")),
-                    stockMinimo = reader.GetInt32(reader.GetOrdinal("StockMinimo"))
+                    AgregarParametroCadena(cmd, "@inNombre", filtro.Nombre);
+                    AgregarParametroCadena(cmd, "@inCodigo", filtro.Codigo);
+                    AgregarParametroDecimal(cmd, "@inPrecioMin", filtro.PrecioMin);
+                    AgregarParametroDecimal(cmd, "@inPrecioMax", filtro.PrecioMax);
+                    AgregarParametroEntero(cmd, "@inCantidadMin", filtro.CantidadMin);
+                    AgregarParametroEntero(cmd, "@inCantidadMax", filtro.CantidadMax);
+                });
+
+            if (productos.Count == 0)
+            {
+                return Ok(new
+                {
+                    message = "No se encontraron productos con los filtros aplicados.",
+                    productos
                 });
             }
 
@@ -45,8 +83,60 @@ public class ProductosController(IConfiguration config) : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = "Error al obtener productos.", detail = ex.Message });
+            return StatusCode(500, new { message = "Error al filtrar productos.", detail = ex.Message });
         }
+    }
+
+    private async Task<List<ProductoDto>> ObtenerProductosAsync(
+        string storedProcedure,
+        Action<SqlCommand>? configurarParametros = null)
+    {
+        string connStr = config.GetConnectionString("DefaultConnection")!;
+
+        await using var conn = new SqlConnection(connStr);
+        await conn.OpenAsync();
+
+        await using var cmd = new SqlCommand(storedProcedure, conn)
+        {
+            CommandType = CommandType.StoredProcedure
+        };
+
+        configurarParametros?.Invoke(cmd);
+
+        await using var reader = await cmd.ExecuteReaderAsync();
+        var productos = new List<ProductoDto>();
+
+        while (await reader.ReadAsync())
+        {
+            productos.Add(new ProductoDto
+            {
+                Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                Codigo = reader.GetString(reader.GetOrdinal("Codigo")),
+                Nombre = reader.GetString(reader.GetOrdinal("Nombre")),
+                Cantidad = reader.GetInt32(reader.GetOrdinal("Cantidad")),
+                Precio = reader.GetDecimal(reader.GetOrdinal("Precio")),
+                StockMinimo = reader.GetInt32(reader.GetOrdinal("StockMinimo"))
+            });
+        }
+
+        return productos;
+    }
+
+    private static void AgregarParametroCadena(SqlCommand cmd, string nombreParametro, string? valor)
+    {
+        cmd.Parameters.AddWithValue(
+            nombreParametro,
+            string.IsNullOrWhiteSpace(valor) ? DBNull.Value : valor.Trim());
+    }
+
+    private static void AgregarParametroDecimal(SqlCommand cmd, string nombreParametro, decimal? valor)
+    {
+        cmd.Parameters.AddWithValue(nombreParametro, valor.HasValue ? valor.Value : DBNull.Value);
+    }
+
+    private static void AgregarParametroEntero(SqlCommand cmd, string nombreParametro, int? valor)
+    {
+        cmd.Parameters.AddWithValue(nombreParametro, valor.HasValue ? valor.Value : DBNull.Value);
     }
 
     /// <summary>
