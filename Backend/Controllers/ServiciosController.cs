@@ -143,6 +143,49 @@ public class ServiciosController(IConfiguration config) : ControllerBase
         }
     }
 
+    [HttpPost("configuraciones")]
+    public IActionResult CrearTipoServicio([FromBody] CrearTipoServicioRequestDto request)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        try
+        {
+            using var conn = new SqlConnection(_connStr);
+            conn.Open();
+            using var cmd = new SqlCommand("dbo.sp_CrearTipoServicio", conn)
+            {
+                CommandType = CommandType.StoredProcedure
+            };
+
+            cmd.Parameters.AddWithValue("@inNombre", request.NombreServicio.Trim());
+            cmd.Parameters.AddWithValue("@inPrecio", request.PrecioBase);
+
+            var pResultCode = new SqlParameter("@outResultCode", SqlDbType.Int) { Direction = ParameterDirection.Output };
+            var pId         = new SqlParameter("@outId",         SqlDbType.Int) { Direction = ParameterDirection.Output };
+            cmd.Parameters.Add(pResultCode);
+            cmd.Parameters.Add(pId);
+
+            cmd.ExecuteNonQuery();
+
+            int resultCode = (int)pResultCode.Value;
+            return resultCode switch
+            {
+                0 => CreatedAtAction(nameof(ObtenerConfiguraciones),
+                        new { id = (int)pId.Value },
+                        new { id = (int)pId.Value, message = "Tipo de servicio creado correctamente." }),
+                1 => BadRequest(new { message = "El nombre del servicio no puede estar vacío." }),
+                2 => BadRequest(new { message = "El precio base no puede ser negativo." }),
+                3 => Conflict(new  { message = "Ya existe un tipo de servicio con ese nombre." }),
+                _ => StatusCode(500, new { message = "Error al crear el tipo de servicio." })
+            };
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Error de conexión con la base de datos.", error = ex.Message });
+        }
+    }
+
     [HttpDelete("{id}")]
     public IActionResult EliminarServicio(int id)
     {
