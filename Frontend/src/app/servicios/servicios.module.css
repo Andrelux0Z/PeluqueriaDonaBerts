@@ -246,6 +246,35 @@
   margin-top: 8px;
 }
 
+/* ── Overlay nested (SV-002 modal sobre modal) */
+.overlayNested {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  animation: fadeIn 150ms ease;
+}
+
+/* ── Link button (+ Crear nuevo tipo) ────────── */
+.btnLink {
+  background: none;
+  border: none;
+  padding: 0;
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font-body);
+  width: fit-content;
+}
+
+.btnLink:hover { color: var(--accent-hover); text-decoration: underline; }
+
 /* ── Confirm ────────────────────────────────── */
 .confirmText {
   font-size: 14px;

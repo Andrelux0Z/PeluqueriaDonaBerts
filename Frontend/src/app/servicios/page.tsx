@@ -50,6 +50,11 @@ export default function ServiciosPage() {
   /* Delete */
   const [confirmDelete, setConfirmDelete] = useState<Servicio | null>(null);
 
+  /* Nuevo tipo (SV-002) */
+  const [showModalNuevoTipo, setShowModalNuevoTipo] = useState(false);
+  const [formNuevoTipo, setFormNuevoTipo] = useState({ nombre: "", precio: 0 });
+  const [savingNuevoTipo, setSavingNuevoTipo] = useState(false);
+
   /* ─── Fetch ──────────────────────────────────── */
   const fetchServicios = useCallback(async () => {
     setLoading(true);
@@ -220,6 +225,49 @@ export default function ServiciosPage() {
       fetchServicios();
     } catch {
       showToast("No se pudo eliminar el servicio.", "error");
+    }
+  };
+
+  /* ─── Crear tipo (SV-002) ───────────────────── */
+  const openNuevoTipo = () => {
+    setFormNuevoTipo({ nombre: "", precio: 0 });
+    setShowModalNuevoTipo(true);
+  };
+
+  const closeNuevoTipo = () => {
+    setShowModalNuevoTipo(false);
+    setFormNuevoTipo({ nombre: "", precio: 0 });
+  };
+
+  const handleCrearTipo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formNuevoTipo.nombre.trim()) return;
+
+    setSavingNuevoTipo(true);
+    try {
+      const res = await fetch(`${API}/configuraciones`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nombreServicio: formNuevoTipo.nombre.trim(),
+          precioBase: formNuevoTipo.precio,
+        }),
+      });
+
+      const data = await res.json().catch(() => null);
+
+      if (res.status === 409) throw new Error("Ya existe un tipo de servicio con ese nombre.");
+      if (!res.ok) throw new Error(data?.message || "Error al crear el tipo de servicio.");
+
+      await fetchTipos();
+      setForm((prev) => ({ ...prev, idTipoServicio: data.id, monto: formNuevoTipo.precio }));
+      closeNuevoTipo();
+      showToast(`Tipo "${formNuevoTipo.nombre.trim()}" creado y seleccionado.`, "success");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Error inesperado";
+      showToast(msg, "error");
+    } finally {
+      setSavingNuevoTipo(false);
     }
   };
 
@@ -413,6 +461,13 @@ export default function ServiciosPage() {
                       </option>
                     ))}
                   </select>
+                  <button
+                    type="button"
+                    className={styles.btnLink}
+                    onClick={openNuevoTipo}
+                  >
+                    + Crear nuevo tipo
+                  </button>
                 </div>
               )}
 
@@ -446,6 +501,67 @@ export default function ServiciosPage() {
                   disabled={saving}
                 >
                   {saving ? "Guardando..." : "Registrar"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── Nuevo tipo modal (SV-002) ───────────── */}
+      {showModalNuevoTipo && (
+        <div className={styles.overlayNested} onClick={closeNuevoTipo}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <h2 className={styles.modalTitle}>Crear tipo de servicio</h2>
+
+            <form className={styles.form} onSubmit={handleCrearTipo}>
+              <div className={styles.field}>
+                <label className={styles.label} htmlFor="inp-tipo-nombre">
+                  Nombre del tipo
+                </label>
+                <input
+                  id="inp-tipo-nombre"
+                  className={styles.input}
+                  type="text"
+                  placeholder="Ej: Tintura completa"
+                  value={formNuevoTipo.nombre}
+                  onChange={(e) => setFormNuevoTipo({ ...formNuevoTipo, nombre: e.target.value })}
+                  required
+                  autoFocus
+                  maxLength={100}
+                />
+              </div>
+
+              <div className={styles.field}>
+                <label className={styles.label} htmlFor="inp-tipo-precio">
+                  Precio base (₡)
+                </label>
+                <input
+                  id="inp-tipo-precio"
+                  className={styles.input}
+                  type="number"
+                  min={0}
+                  step={0.01}
+                  value={formNuevoTipo.precio}
+                  onChange={(e) => setFormNuevoTipo({ ...formNuevoTipo, precio: Number(e.target.value) })}
+                  required
+                />
+              </div>
+
+              <div className={styles.modalActions}>
+                <button
+                  type="button"
+                  className={`${styles.btn} ${styles.btnSecondary}`}
+                  onClick={closeNuevoTipo}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className={`${styles.btn} ${styles.btnPrimary}`}
+                  disabled={savingNuevoTipo}
+                >
+                  {savingNuevoTipo ? "Guardando..." : "Crear tipo"}
                 </button>
               </div>
             </form>
