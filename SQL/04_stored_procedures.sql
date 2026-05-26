@@ -440,7 +440,8 @@ BEGIN
         Fecha,
         Monto,
         EsAdquisicion,
-        Detalle
+        Detalle,
+        Cantidad
     FROM dbo.vw_Historial
     WHERE (@inTipoTransaccion IS NULL OR TipoTransaccion = @inTipoTransaccion)
       AND (@inFechaInicio IS NULL OR Fecha >= @inFechaInicio)

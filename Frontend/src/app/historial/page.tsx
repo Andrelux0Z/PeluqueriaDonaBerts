@@ -13,6 +13,7 @@ interface Transaccion {
   monto: number;
   esAdquisicion: boolean;
   detalle: string;
+  cantidad: number;
 }
 
 type Filtro = "Todos" | "Compra" | "Venta" | "Servicio";
@@ -102,7 +103,36 @@ export default function HistorialPage() {
   }, [filtro, fechaInicio, fechaFin, montoMin, montoMax, detalle]);
 
   useEffect(() => {
-    if (authChecked) fetchAll();
+    if (authChecked) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const detalleParam = urlParams.get("detalle");
+
+      if (detalleParam) {
+        setDetalle(detalleParam);
+        setLoading(true);
+
+        const params = new URLSearchParams();
+        params.set("Detalle", detalleParam);
+
+        fetch(`${API}/filtrar?${params.toString()}`)
+          .then((res) => {
+            if (!res.ok) throw new Error();
+            return res.json();
+          })
+          .then((data) => {
+            setHistorial(Array.isArray(data) ? data : data.historial || []);
+          })
+          .catch(() => {
+            setToast({ message: "Error al aplicar filtro de la URL.", type: "error" });
+            setHistorial([]);
+          })
+          .finally(() => {
+            setLoading(false);
+          });
+      } else {
+        fetchAll();
+      }
+    }
   }, [authChecked, fetchAll]);
 
   /* ─── Filter ─────────────────────────────────── */
@@ -184,7 +214,7 @@ export default function HistorialPage() {
         <button
           id="btn-back"
           className={`${styles.btn} ${styles.btnSecondary}`}
-          onClick={() => router.push("/dashboard")}
+          onClick={() => router.back()}
         >
           ← Volver
         </button>
@@ -197,85 +227,96 @@ export default function HistorialPage() {
       )}
 
       {/* Filter pills & dates */}
-      <div className={styles.filters}>
-        {filtros.map((f) => (
-          <button
-            key={f}
-            className={`${styles.filterBtn} ${filtro === f ? styles.filterBtnActive : ""}`}
-            onClick={() => {
-              setFiltro(f);
-              const hasOtherFilters = !!fechaInicio || !!fechaFin || !!montoMin.trim() || !!montoMax.trim() || !!detalle.trim();
-              if (f === "Todos" && !hasOtherFilters) {
-                fetchAll();
-              } else {
-                fetchFiltered(f);
-              }
-            }}
-          >
-            {f}
-          </button>
-        ))}
-        <div className={styles.filterDateGroup} style={{ marginLeft: "auto" }}>
-          <label className={styles.filterDateLabel}>Desde:</label>
-          <input
-            type="date"
-            className={styles.filterDate}
-            value={fechaInicio}
-            onChange={(e) => setFechaInicio(e.target.value)}
-          />
+      <div className={styles.filtersContainer}>
+        <div className={styles.filtersRow}>
+          <div className={styles.filtersGroup}>
+            {filtros.map((f) => (
+              <button
+                key={f}
+                className={`${styles.filterBtn} ${filtro === f ? styles.filterBtnActive : ""}`}
+                onClick={() => {
+                  setFiltro(f);
+                  const hasOtherFilters = !!fechaInicio || !!fechaFin || !!montoMin.trim() || !!montoMax.trim() || !!detalle.trim();
+                  if (f === "Todos" && !hasOtherFilters) {
+                    fetchAll();
+                  } else {
+                    fetchFiltered(f);
+                  }
+                }}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+          <div className={styles.filtersGroup}>
+            <div className={styles.filterDateGroup}>
+              <label className={styles.filterDateLabel} style={{ minWidth: 68, textAlign: "right" }}>Desde:</label>
+              <input
+                type="date"
+                className={styles.filterDate}
+                value={fechaInicio}
+                onChange={(e) => setFechaInicio(e.target.value)}
+              />
+            </div>
+            <div className={styles.filterDateGroup}>
+              <label className={styles.filterDateLabel} style={{ minWidth: 73, textAlign: "right" }}>Hasta:</label>
+              <input
+                type="date"
+                className={styles.filterDate}
+                value={fechaFin}
+                onChange={(e) => setFechaFin(e.target.value)}
+              />
+            </div>
+          </div>
         </div>
-        <div className={styles.filterDateGroup}>
-          <label className={styles.filterDateLabel}>Hasta:</label>
-          <input
-            type="date"
-            className={styles.filterDate}
-            value={fechaFin}
-            onChange={(e) => setFechaFin(e.target.value)}
-          />
-        </div>
-        <div className={styles.filterDateGroup}>
-          <label className={styles.filterDateLabel}>Monto mín.:</label>
-          <input
-            type="number"
-            inputMode="decimal"
-            step="0.01"
-            className={styles.filterDate}
-            value={montoMin}
-            onChange={(e) => setMontoMin(e.target.value)}
-          />
-        </div>
-        <div className={styles.filterDateGroup}>
-          <label className={styles.filterDateLabel}>Monto máx.:</label>
-          <input
-            type="number"
-            inputMode="decimal"
-            step="0.01"
-            className={styles.filterDate}
-            value={montoMax}
-            onChange={(e) => setMontoMax(e.target.value)}
-          />
-        </div>
-        <div className={styles.filterDateGroup}>
-          <label className={styles.filterDateLabel}>Detalle:</label>
-          <input
-            type="text"
-            className={`${styles.filterDate} ${styles.filterText}`}
-            value={detalle}
-            placeholder="Nombre de producto o servicio"
-            onChange={(e) => setDetalle(e.target.value)}
-          />
-        </div>
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <button className={`${styles.btn} ${styles.btnPrimary}`} onClick={aplicarFiltros}>
-            Aplicar filtros
-          </button>
-          <button
-            className={`${styles.btn} ${styles.btnSecondary}`}
-            onClick={limpiarFiltros}
-            disabled={!hasActiveFilters}
-          >
-            Limpiar filtros
-          </button>
+
+        <div className={styles.filtersRow}>
+          <div className={styles.filtersGroup}>
+            <div className={styles.filterDateGroup}>
+              <label className={styles.filterDateLabel}>Detalle:</label>
+              <input
+                type="text"
+                className={`${styles.filterDate} ${styles.filterText}`}
+                value={detalle}
+                placeholder="Nombre de producto o servicio"
+                onChange={(e) => setDetalle(e.target.value)}
+              />
+            </div>
+            <button className={`${styles.btn} ${styles.btnPrimary}`} onClick={aplicarFiltros}>
+              Aplicar filtros
+            </button>
+            <button
+              className={`${styles.btn} ${styles.btnSecondary}`}
+              onClick={limpiarFiltros}
+              disabled={!hasActiveFilters}
+            >
+              Limpiar filtros
+            </button>
+          </div>
+          <div className={styles.filtersGroup}>
+            <div className={styles.filterDateGroup}>
+              <label className={styles.filterDateLabel}>Monto mín.:</label>
+              <input
+                type="number"
+                inputMode="decimal"
+                step="0.01"
+                className={styles.filterDate}
+                value={montoMin}
+                onChange={(e) => setMontoMin(e.target.value)}
+              />
+            </div>
+            <div className={styles.filterDateGroup}>
+              <label className={styles.filterDateLabel}>Monto máx.:</label>
+              <input
+                type="number"
+                inputMode="decimal"
+                step="0.01"
+                className={styles.filterDate}
+                value={montoMax}
+                onChange={(e) => setMontoMax(e.target.value)}
+              />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -296,6 +337,7 @@ export default function HistorialPage() {
                 <th>Tipo</th>
                 <th>Ref.</th>
                 <th>Detalle</th>
+                <th style={{ textAlign: "right" }}>Cant.</th>
                 <th>Fecha</th>
                 <th style={{ textAlign: "right" }}>Monto</th>
               </tr>
@@ -310,6 +352,7 @@ export default function HistorialPage() {
                   </td>
                   <td>#{t.idReferencia}</td>
                   <td>{t.detalle || "—"}</td>
+                  <td style={{ textAlign: "right" }}>{t.cantidad}</td>
                   <td>{fmtFecha(t.fecha)}</td>
                   <td style={{ textAlign: "right" }}>
                     <span className={t.esAdquisicion ? styles.montoOut : styles.montoIn}>
