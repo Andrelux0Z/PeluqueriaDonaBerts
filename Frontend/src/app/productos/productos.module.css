@@ -344,6 +344,18 @@
   color: var(--ink);
 }
 
+/* ── Modal inline error (WCAG 3.3.1) ───────── */
+.modalError {
+  background: #fce8e8;
+  color: #a12828;
+  border: 1px solid #f1c0c0;
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  animation: fadeIn 200ms ease;
+}
+
 /* ── Compra modal extras ────────────────────── */
 .modalCompra {
   width: min(500px, 92vw);

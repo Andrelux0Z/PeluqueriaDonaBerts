@@ -261,6 +261,18 @@
   margin-top: 8px;
 }
 
+/* ── Modal inline error (WCAG 3.3.1) ───────── */
+.modalError {
+  background: #fce8e8;
+  color: #a12828;
+  border: 1px solid #f1c0c0;
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  animation: fadeIn 200ms ease;
+}
+
 /* ── Overlay nested (SV-002 modal sobre modal) */
 .overlayNested {
   position: fixed;
