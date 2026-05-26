@@ -287,7 +287,7 @@ export default function ProductosPage() {
       showToast("El porcentaje de descuento debe estar entre 0 y 100.", "error"); return;
     }
     if (formCompra.aplicarDescuento && formCompra.tipoDescuento === "FIJO" && descuentoValor > montoBase) {
-      setModalError("El monto fijo del descuento no puede ser mayor al total de la compra.", "error"); return;
+      setModalError("El monto fijo del descuento no puede ser mayor al total de la compra."); return;
     }
 
     setSavingCompra(true);

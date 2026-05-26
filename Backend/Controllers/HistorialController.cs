@@ -96,7 +96,8 @@ public class HistorialController(IConfiguration config) : ControllerBase
                 esAdquisicion = reader.GetInt32(reader.GetOrdinal("EsAdquisicion")) == 1,
                 detalle = reader.IsDBNull(reader.GetOrdinal("Detalle"))
                     ? string.Empty
-                    : reader.GetString(reader.GetOrdinal("Detalle"))
+                    : reader.GetString(reader.GetOrdinal("Detalle")),
+                cantidad = reader.GetInt32(reader.GetOrdinal("Cantidad"))
             });
         }
 
