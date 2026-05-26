@@ -66,6 +66,9 @@ export default function ServiciosPage() {
   const [formNuevoTipo, setFormNuevoTipo] = useState({ nombre: "", precio: 0 });
   const [savingNuevoTipo, setSavingNuevoTipo] = useState(false);
 
+  /* Modal inline error */
+  const [modalError, setModalError] = useState<string | null>(null);
+
   /* Gestión tipos (SV-004) */
   const [showGestion, setShowGestion] = useState(false);
   const [tipoAEditar, setTipoAEditar] = useState<TipoServicio | null>(null);
@@ -215,6 +218,7 @@ export default function ServiciosPage() {
   const openCreate = () => {
     setForm(emptyForm);
     setUsarNombreLibre(false);
+    setModalError(null);
     setShowModal(true);
   };
 
@@ -222,6 +226,7 @@ export default function ServiciosPage() {
     setShowModal(false);
     setForm(emptyForm);
     setUsarNombreLibre(false);
+    setModalError(null);
   };
 
   /* When selecting a tipo, auto-fill monto */
@@ -273,7 +278,7 @@ export default function ServiciosPage() {
       fetchServicios();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Error inesperado";
-      showToast(msg, "error");
+      setModalError(msg);
     } finally {
       setSaving(false);
     }
@@ -291,19 +296,21 @@ export default function ServiciosPage() {
       setConfirmDelete(null);
       fetchServicios();
     } catch {
-      showToast("No se pudo eliminar el servicio.", "error");
+      setModalError("No se pudo eliminar el servicio.");
     }
   };
 
   /* ─── Crear tipo (SV-002) ───────────────────── */
   const openNuevoTipo = () => {
     setFormNuevoTipo({ nombre: "", precio: 0 });
+    setModalError(null);
     setShowModalNuevoTipo(true);
   };
 
   const closeNuevoTipo = () => {
     setShowModalNuevoTipo(false);
     setFormNuevoTipo({ nombre: "", precio: 0 });
+    setModalError(null);
   };
 
   const handleCrearTipo = async (e: React.FormEvent) => {
@@ -332,7 +339,7 @@ export default function ServiciosPage() {
       showToast(`Tipo "${formNuevoTipo.nombre.trim()}" creado y seleccionado.`, "success");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Error inesperado";
-      showToast(msg, "error");
+      setModalError(msg);
     } finally {
       setSavingNuevoTipo(false);
     }
@@ -347,6 +354,7 @@ export default function ServiciosPage() {
   const closeEditar = () => {
     setTipoAEditar(null);
     setFormEditar({ nombre: "", precio: 0 });
+    setModalError(null);
   };
 
   const handleActualizarTipo = async (e: React.FormEvent) => {
@@ -374,7 +382,7 @@ export default function ServiciosPage() {
       showToast("Tipo de servicio actualizado correctamente.", "success");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Error inesperado";
-      showToast(msg, "error");
+      setModalError(msg);
     } finally {
       setSavingEditar(false);
     }
@@ -391,11 +399,23 @@ export default function ServiciosPage() {
 
       await fetchTipos();
       setTipoAEliminar(null);
+      setModalError(null);
       showToast("Tipo de servicio eliminado correctamente.", "success");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Error inesperado";
-      showToast(msg, "error");
+      setModalError(msg);
     }
+  };
+
+  /* ─── Confirm delete helpers ────────────────── */
+  const closeConfirmDelete = () => {
+    setConfirmDelete(null);
+    setModalError(null);
+  };
+
+  const closeConfirmEliminarTipo = () => {
+    setTipoAEliminar(null);
+    setModalError(null);
   };
 
   /* ─── Derived ────────────────────────────────── */
@@ -651,12 +671,19 @@ export default function ServiciosPage() {
                   className={styles.input}
                   type="number"
                   min={0}
-                  step={0.01}
+                  step="any"
                   value={form.monto}
                   onChange={(e) => setForm({ ...form, monto: Number(e.target.value) })}
+                  onFocus={(e) => { const t = e.target; setTimeout(() => t.select(), 0); }}
                   required
                 />
               </div>
+
+              {modalError && (
+                <div className={styles.modalError} role="alert">
+                  {modalError}
+                </div>
+              )}
 
               <div className={styles.modalActions}>
                 <button
@@ -712,12 +739,19 @@ export default function ServiciosPage() {
                   className={styles.input}
                   type="number"
                   min={0}
-                  step={0.01}
+                  step="any"
                   value={formNuevoTipo.precio}
                   onChange={(e) => setFormNuevoTipo({ ...formNuevoTipo, precio: Number(e.target.value) })}
+                  onFocus={(e) => { const t = e.target; setTimeout(() => t.select(), 0); }}
                   required
                 />
               </div>
+
+              {modalError && (
+                <div className={styles.modalError} role="alert">
+                  {modalError}
+                </div>
+              )}
 
               <div className={styles.modalActions}>
                 <button
@@ -832,12 +866,19 @@ export default function ServiciosPage() {
                   className={styles.input}
                   type="number"
                   min={0}
-                  step={0.01}
+                  step="any"
                   value={formEditar.precio}
                   onChange={(e) => setFormEditar({ ...formEditar, precio: Number(e.target.value) })}
+                  onFocus={(e) => { const t = e.target; setTimeout(() => t.select(), 0); }}
                   required
                 />
               </div>
+              {modalError && (
+                <div className={styles.modalError} role="alert">
+                  {modalError}
+                </div>
+              )}
+
               <div className={styles.modalActions}>
                 <button
                   type="button"
@@ -861,7 +902,7 @@ export default function ServiciosPage() {
 
       {/* ── Confirmar eliminar tipo (SV-004) ────── */}
       {tipoAEliminar && (
-        <div className={styles.overlayNested} onClick={() => setTipoAEliminar(null)}>
+        <div className={styles.overlayNested} onClick={closeConfirmEliminarTipo}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <h2 className={styles.modalTitle}>Eliminar tipo de servicio</h2>
             <p className={styles.confirmText}>
@@ -871,10 +912,15 @@ export default function ServiciosPage() {
             <p className={styles.confirmNote}>
               Los servicios ya registrados con este tipo no se verán afectados.
             </p>
+            {modalError && (
+              <div className={styles.modalError} role="alert">
+                {modalError}
+              </div>
+            )}
             <div className={styles.modalActions}>
               <button
                 className={`${styles.btn} ${styles.btnSecondary}`}
-                onClick={() => setTipoAEliminar(null)}
+                onClick={closeConfirmEliminarTipo}
               >
                 Cancelar
               </button>
@@ -891,17 +937,22 @@ export default function ServiciosPage() {
 
       {/* ── Delete confirm ───────────────────────── */}
       {confirmDelete && (
-        <div className={styles.overlay} onClick={() => setConfirmDelete(null)}>
+        <div className={styles.overlay} onClick={closeConfirmDelete}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <h2 className={styles.modalTitle}>Confirmar eliminación</h2>
             <p className={styles.confirmText}>
               ¿Está seguro que desea eliminar el servicio{" "}
               <span className={styles.confirmName}>{confirmDelete.nombre}</span>?
             </p>
+            {modalError && (
+              <div className={styles.modalError} role="alert">
+                {modalError}
+              </div>
+            )}
             <div className={styles.modalActions}>
               <button
                 className={`${styles.btn} ${styles.btnSecondary}`}
-                onClick={() => setConfirmDelete(null)}
+                onClick={closeConfirmDelete}
               >
                 Cancelar
               </button>

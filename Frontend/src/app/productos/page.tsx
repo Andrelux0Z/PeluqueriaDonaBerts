@@ -47,6 +47,9 @@ export default function ProductosPage() {
   /* Delete confirm */
   const [confirmDelete, setConfirmDelete] = useState<Producto | null>(null);
 
+  /* Modal inline error */
+  const [modalError, setModalError] = useState<string | null>(null);
+
   /* Registrar compra (IP-006) */
   const [showModalCompra, setShowModalCompra] = useState(false);
   const [formCompra, setFormCompra] = useState({
@@ -168,6 +171,7 @@ export default function ProductosPage() {
   const openCreate = () => {
     setEditingId(null);
     setForm(emptyForm);
+    setModalError(null);
     setShowModal(true);
   };
 
@@ -179,6 +183,7 @@ export default function ProductosPage() {
       precio: p.precio,
       stockMinimo: p.stockMinimo,
     });
+    setModalError(null);
     setShowModal(true);
   };
 
@@ -186,6 +191,7 @@ export default function ProductosPage() {
     setShowModal(false);
     setEditingId(null);
     setForm(emptyForm);
+    setModalError(null);
   };
 
   /* ─── Save (create / update) ─────────────────── */
@@ -218,7 +224,7 @@ export default function ProductosPage() {
       fetchProductos();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Error inesperado";
-      showToast(msg, "error");
+      setModalError(msg);
     } finally {
       setSaving(false);
     }
@@ -236,8 +242,14 @@ export default function ProductosPage() {
       setConfirmDelete(null);
       fetchProductos();
     } catch {
-      showToast("No se pudo eliminar el producto.", "error");
+      setModalError("No se pudo eliminar el producto.");
     }
+  };
+
+  /* ─── Confirm delete helpers ────────────────── */
+  const closeConfirmDelete = () => {
+    setConfirmDelete(null);
+    setModalError(null);
   };
 
   /* ─── Compra handlers (IP-006) ──────────────── */
@@ -254,13 +266,18 @@ export default function ProductosPage() {
     setShowModalCompra(true);
   };
 
-  const closeCompra = () => setShowModalCompra(false);
+  const closeCompra = () => {
+    setShowModalCompra(false);
+    setModalError(null);
+  };
 
   const handleRegistrarCompra = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formCompra.idProducto) { showToast("Debe seleccionar un producto.", "error"); return; }
-    if (formCompra.cantidad <= 0) { showToast("La cantidad debe ser mayor a cero.", "error"); return; }
-    if (formCompra.precioUnit < 0) { showToast("El precio unitario no puede ser negativo.", "error"); return; }
+    if (!formCompra.idProducto) { setModalError("Debe seleccionar un producto."); return; }
+    if (formCompra.cantidad <= 0) { setModalError("La cantidad debe ser mayor a cero."); return; }
+    if (formCompra.precioUnit < 0) { setModalError("El precio unitario no puede ser negativo."); return; }
+      
+    
     const montoBase = formCompra.cantidad * formCompra.precioUnit;
     const descuentoValor = formCompra.aplicarDescuento ? formCompra.descuento : 0;
 
@@ -268,7 +285,7 @@ export default function ProductosPage() {
       showToast("El porcentaje de descuento debe estar entre 0 y 100.", "error"); return;
     }
     if (formCompra.aplicarDescuento && formCompra.tipoDescuento === "FIJO" && descuentoValor > montoBase) {
-      showToast("El monto fijo del descuento no puede ser mayor al total de la compra.", "error"); return;
+      setModalError("El monto fijo del descuento no puede ser mayor al total de la compra.", "error"); return;
     }
 
     setSavingCompra(true);
@@ -294,7 +311,7 @@ export default function ProductosPage() {
       closeCompra();
       fetchProductos();
     } catch (err: unknown) {
-      showToast(err instanceof Error ? err.message : "Error inesperado", "error");
+      setModalError(err instanceof Error ? err.message : "Error inesperado");
     } finally {
       setSavingCompra(false);
     }
@@ -543,6 +560,7 @@ export default function ProductosPage() {
                   min={0}
                   value={form.cantidad}
                   onChange={(e) => setForm({ ...form, cantidad: Number(e.target.value) })}
+                  onFocus={(e) => { const t = e.target; setTimeout(() => t.select(), 0); }}
                   required
                 />
               </div>
@@ -556,9 +574,10 @@ export default function ProductosPage() {
                   className={styles.input}
                   type="number"
                   min={0}
-                  step={0.01}
+                  step="any"
                   value={form.precio}
                   onChange={(e) => setForm({ ...form, precio: Number(e.target.value) })}
+                  onFocus={(e) => { const t = e.target; setTimeout(() => t.select(), 0); }}
                   required
                 />
               </div>
@@ -574,9 +593,16 @@ export default function ProductosPage() {
                   min={0}
                   value={form.stockMinimo}
                   onChange={(e) => setForm({ ...form, stockMinimo: Number(e.target.value) })}
+                  onFocus={(e) => { const t = e.target; setTimeout(() => t.select(), 0); }}
                   required
                 />
               </div>
+
+              {modalError && (
+                <div className={styles.modalError} role="alert">
+                  {modalError}
+                </div>
+              )}
 
               <div className={styles.modalActions}>
                 <button
@@ -601,7 +627,7 @@ export default function ProductosPage() {
 
       {/* ── Delete confirmation modal ────────────── */}
       {confirmDelete && (
-        <div className={styles.overlay} onClick={() => setConfirmDelete(null)}>
+        <div className={styles.overlay} onClick={closeConfirmDelete}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <h2 className={styles.modalTitle}>Confirmar eliminación</h2>
             <p className={styles.confirmText}>
@@ -609,10 +635,15 @@ export default function ProductosPage() {
               <span className={styles.confirmName}>{confirmDelete.nombre}</span>? Esta acción
               no se puede deshacer.
             </p>
+            {modalError && (
+              <div className={styles.modalError} role="alert">
+                {modalError}
+              </div>
+            )}
             <div className={styles.modalActions}>
               <button
                 className={`${styles.btn} ${styles.btnSecondary}`}
-                onClick={() => setConfirmDelete(null)}
+                onClick={closeConfirmDelete}
               >
                 Cancelar
               </button>
@@ -667,6 +698,7 @@ export default function ProductosPage() {
                   min={1}
                   value={formCompra.cantidad}
                   onChange={(e) => setFormCompra({ ...formCompra, cantidad: Number(e.target.value) })}
+                  onFocus={(e) => { const t = e.target; setTimeout(() => t.select(), 0); }}
                   required
                 />
               </div>
@@ -680,9 +712,10 @@ export default function ProductosPage() {
                   className={styles.input}
                   type="number"
                   min={0}
-                  step={0.01}
+                  step="any"
                   value={formCompra.precioUnit}
                   onChange={(e) => setFormCompra({ ...formCompra, precioUnit: Number(e.target.value) })}
+                  onFocus={(e) => { const t = e.target; setTimeout(() => t.select(), 0); }}
                   required
                 />
               </div>
@@ -780,6 +813,12 @@ export default function ProductosPage() {
                   onChange={(e) => setFormCompra({ ...formCompra, notas: e.target.value })}
                 />
               </div>
+
+              {modalError && (
+                <div className={styles.modalError} role="alert">
+                  {modalError}
+                </div>
+              )}
 
               <div className={styles.modalActions}>
                 <button
