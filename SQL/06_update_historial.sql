@@ -1,3 +1,10 @@
+/* ================================================================
+   06 – ACTUALIZACIÓN DE HISTORIAL
+
+   Este script ajusta la vista y el procedimiento de historial.
+   Ejecutar después de 02_create_tables.sql y 04_stored_procedures.sql.
+   ================================================================ */
+
 ALTER VIEW dbo.vw_Historial
 AS
     -- Compras (dinero que sale)
