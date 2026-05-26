@@ -651,9 +651,10 @@ export default function ServiciosPage() {
                   className={styles.input}
                   type="number"
                   min={0}
-                  step={0.01}
+                  step="any"
                   value={form.monto}
                   onChange={(e) => setForm({ ...form, monto: Number(e.target.value) })}
+                  onFocus={(e) => { const t = e.target; setTimeout(() => t.select(), 0); }}
                   required
                 />
               </div>
@@ -712,9 +713,10 @@ export default function ServiciosPage() {
                   className={styles.input}
                   type="number"
                   min={0}
-                  step={0.01}
+                  step="any"
                   value={formNuevoTipo.precio}
                   onChange={(e) => setFormNuevoTipo({ ...formNuevoTipo, precio: Number(e.target.value) })}
+                  onFocus={(e) => { const t = e.target; setTimeout(() => t.select(), 0); }}
                   required
                 />
               </div>
@@ -832,9 +834,10 @@ export default function ServiciosPage() {
                   className={styles.input}
                   type="number"
                   min={0}
-                  step={0.01}
+                  step="any"
                   value={formEditar.precio}
                   onChange={(e) => setFormEditar({ ...formEditar, precio: Number(e.target.value) })}
+                  onFocus={(e) => { const t = e.target; setTimeout(() => t.select(), 0); }}
                   required
                 />
               </div>

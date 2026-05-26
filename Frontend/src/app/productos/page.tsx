@@ -526,6 +526,7 @@ export default function ProductosPage() {
                   min={0}
                   value={form.cantidad}
                   onChange={(e) => setForm({ ...form, cantidad: Number(e.target.value) })}
+                  onFocus={(e) => { const t = e.target; setTimeout(() => t.select(), 0); }}
                   required
                 />
               </div>
@@ -539,9 +540,10 @@ export default function ProductosPage() {
                   className={styles.input}
                   type="number"
                   min={0}
-                  step={0.01}
+                  step="any"
                   value={form.precio}
                   onChange={(e) => setForm({ ...form, precio: Number(e.target.value) })}
+                  onFocus={(e) => { const t = e.target; setTimeout(() => t.select(), 0); }}
                   required
                 />
               </div>
@@ -557,6 +559,7 @@ export default function ProductosPage() {
                   min={0}
                   value={form.stockMinimo}
                   onChange={(e) => setForm({ ...form, stockMinimo: Number(e.target.value) })}
+                  onFocus={(e) => { const t = e.target; setTimeout(() => t.select(), 0); }}
                   required
                 />
               </div>
@@ -650,6 +653,7 @@ export default function ProductosPage() {
                   min={1}
                   value={formCompra.cantidad}
                   onChange={(e) => setFormCompra({ ...formCompra, cantidad: Number(e.target.value) })}
+                  onFocus={(e) => { const t = e.target; setTimeout(() => t.select(), 0); }}
                   required
                 />
               </div>
@@ -663,9 +667,10 @@ export default function ProductosPage() {
                   className={styles.input}
                   type="number"
                   min={0}
-                  step={0.01}
+                  step="any"
                   value={formCompra.precioUnit}
                   onChange={(e) => setFormCompra({ ...formCompra, precioUnit: Number(e.target.value) })}
+                  onFocus={(e) => { const t = e.target; setTimeout(() => t.select(), 0); }}
                   required
                 />
               </div>
@@ -694,9 +699,10 @@ export default function ProductosPage() {
                     type="number"
                     min={0}
                     max={100}
-                    step={0.01}
+                    step="any"
                     value={formCompra.descuento}
                     onChange={(e) => setFormCompra({ ...formCompra, descuento: Number(e.target.value) })}
+                    onFocus={(e) => { const t = e.target; setTimeout(() => t.select(), 0); }}
                   />
                 </div>
               )}
