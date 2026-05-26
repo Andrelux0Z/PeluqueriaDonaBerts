@@ -35,9 +35,20 @@ export default function ServiciosPage() {
   const [servicios, setServicios] = useState<Servicio[]>([]);
   const [filtered, setFiltered] = useState<Servicio[]>([]);
   const [tipos, setTipos] = useState<TipoServicio[]>([]);
-  const [search, setSearch] = useState("");
-  const [fechaInicio, setFechaInicio] = useState("");
-  const [fechaFin, setFechaFin] = useState("");
+  const [draftSearch, setDraftSearch] = useState("");
+  const [draftFechaInicio, setDraftFechaInicio] = useState("");
+  const [draftFechaFin, setDraftFechaFin] = useState("");
+  const [draftMontoMin, setDraftMontoMin] = useState("");
+  const [draftMontoMax, setDraftMontoMax] = useState("");
+  const [filterError, setFilterError] = useState("");
+
+  const [appliedFilters, setAppliedFilters] = useState({
+    search: "",
+    fechaInicio: "",
+    fechaFin: "",
+    montoMin: "",
+    montoMax: ""
+  });
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<Toast | null>(null);
 
@@ -121,29 +132,78 @@ export default function ServiciosPage() {
   }, [authChecked, fetchServicios, fetchTipos]);
 
   /* ─── Search & Filter ────────────────────────── */
+  const validateAndApplyFilters = () => {
+    setFilterError("");
+
+    if (draftFechaInicio && draftFechaFin) {
+      if (new Date(draftFechaInicio) > new Date(draftFechaFin)) {
+        setFilterError("La fecha 'Desde' no puede ser mayor a la fecha 'Hasta'.");
+        return;
+      }
+    }
+
+    if (draftMontoMin && draftMontoMax) {
+      if (Number(draftMontoMin) > Number(draftMontoMax)) {
+        setFilterError("El monto mínimo no puede ser mayor al monto máximo.");
+        return;
+      }
+    }
+
+    setAppliedFilters({
+      search: draftSearch,
+      fechaInicio: draftFechaInicio,
+      fechaFin: draftFechaFin,
+      montoMin: draftMontoMin,
+      montoMax: draftMontoMax
+    });
+  };
+
+  const clearFilters = () => {
+    setDraftSearch("");
+    setDraftFechaInicio("");
+    setDraftFechaFin("");
+    setDraftMontoMin("");
+    setDraftMontoMax("");
+    setFilterError("");
+    setAppliedFilters({
+      search: "",
+      fechaInicio: "",
+      fechaFin: "",
+      montoMin: "",
+      montoMax: ""
+    });
+  };
+
   useEffect(() => {
     let result = servicios;
 
-    if (search.trim()) {
-      const q = search.toLowerCase();
+    if (appliedFilters.search.trim()) {
+      const q = appliedFilters.search.toLowerCase();
       result = result.filter((s) => s.nombre.toLowerCase().includes(q));
     }
 
-    if (fechaInicio) {
-      const start = new Date(fechaInicio);
-      // Ajustar zona horaria si es necesario, o comparar directamente
+    if (appliedFilters.fechaInicio) {
+      const start = new Date(appliedFilters.fechaInicio);
       start.setHours(0, 0, 0, 0);
       result = result.filter((s) => new Date(s.fecha) >= start);
     }
 
-    if (fechaFin) {
-      const end = new Date(fechaFin);
+    if (appliedFilters.fechaFin) {
+      const end = new Date(appliedFilters.fechaFin);
       end.setHours(23, 59, 59, 999);
       result = result.filter((s) => new Date(s.fecha) <= end);
     }
 
+    if (appliedFilters.montoMin) {
+      result = result.filter((s) => s.monto >= Number(appliedFilters.montoMin));
+    }
+
+    if (appliedFilters.montoMax) {
+      result = result.filter((s) => s.monto <= Number(appliedFilters.montoMax));
+    }
+
     setFiltered(result);
-  }, [search, fechaInicio, fechaFin, servicios]);
+  }, [appliedFilters, servicios]);
 
   /* ─── Toast ──────────────────────────────────── */
   const showToast = (message: string, type: "success" | "error") => {
@@ -396,41 +456,84 @@ export default function ServiciosPage() {
         </div>
       )}
 
-      <div className={styles.filtersRow}>
+      <div className={styles.filtersGrid}>
+        {/* Fila 1 */}
         <input
           id="search-servicios"
           className={styles.filterInput}
           type="text"
           placeholder="Buscar servicio por nombre..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          value={draftSearch}
+          onChange={(e) => setDraftSearch(e.target.value)}
         />
-        <div className={styles.filterDateGroup}>
-          <label className={styles.filterDateLabel}>Desde:</label>
+        <div className={styles.filterGroup}>
+          <label className={styles.filterLabel}>Desde:</label>
           <input
             type="date"
-            className={styles.filterDate}
-            value={fechaInicio}
-            onChange={(e) => setFechaInicio(e.target.value)}
+            className={styles.filterControl}
+            value={draftFechaInicio}
+            onChange={(e) => setDraftFechaInicio(e.target.value)}
           />
         </div>
-        <div className={styles.filterDateGroup}>
-          <label className={styles.filterDateLabel}>Hasta:</label>
+        <div className={styles.filterGroup}>
+          <label className={styles.filterLabel}>Hasta:</label>
           <input
             type="date"
-            className={styles.filterDate}
-            value={fechaFin}
-            onChange={(e) => setFechaFin(e.target.value)}
+            className={styles.filterControl}
+            value={draftFechaFin}
+            onChange={(e) => setDraftFechaFin(e.target.value)}
+          />
+        </div>
+
+        {/* Fila 2 */}
+        <div className={styles.filtersActions}>
+          <button
+            className={`${styles.btn} ${styles.btnSecondary}`}
+            onClick={clearFilters}
+          >
+            Limpiar
+          </button>
+          <button
+            className={`${styles.btn} ${styles.btnPrimary}`}
+            onClick={validateAndApplyFilters}
+          >
+            Filtrar
+          </button>
+        </div>
+        <div className={styles.filterGroup}>
+          <label className={styles.filterLabel}>Mín ₡:</label>
+          <input
+            type="number"
+            min={0}
+            className={styles.filterControl}
+            value={draftMontoMin}
+            onChange={(e) => setDraftMontoMin(e.target.value)}
+            placeholder="0"
+          />
+        </div>
+        <div className={styles.filterGroup}>
+          <label className={styles.filterLabel}>Máx ₡:</label>
+          <input
+            type="number"
+            min={0}
+            className={styles.filterControl}
+            value={draftMontoMax}
+            onChange={(e) => setDraftMontoMax(e.target.value)}
+            placeholder="∞"
           />
         </div>
       </div>
+
+      {filterError && (
+        <div className={styles.filterErrorText}>{filterError}</div>
+      )}
 
       <div className={styles.tableWrapper}>
         {loading ? (
           <div className={styles.loading}>Cargando servicios...</div>
         ) : filtered.length === 0 ? (
           <div className={styles.emptyState}>
-            {search ? "No se encontraron resultados." : "No hay servicios registrados."}
+            {Object.values(appliedFilters).some(v => v !== "") ? "No se encontraron resultados." : "No hay servicios registrados."}
           </div>
         ) : (
           <table className={styles.table}>
