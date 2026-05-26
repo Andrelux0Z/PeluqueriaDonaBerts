@@ -500,6 +500,12 @@ export default function ProductosPage() {
                           Editar
                         </button>
                         <button
+                          className={`${styles.btn} ${styles.btnSecondary} ${styles.btnSmall}`}
+                          onClick={() => router.push(`/historial?detalle=${encodeURIComponent(p.nombre)}`)}
+                        >
+                          Historial
+                        </button>
+                        <button
                           className={`${styles.btn} ${styles.btnDanger} ${styles.btnSmall}`}
                           onClick={() => setConfirmDelete(p)}
                         >
