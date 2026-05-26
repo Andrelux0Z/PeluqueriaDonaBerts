@@ -30,7 +30,8 @@ const emptyForm = { idTipoServicio: null as number | null, nombreLibre: "", mont
 export default function ServiciosPage() {
   const router = useRouter();
 
-    const [authChecked, setAuthChecked] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [rol, setRol] = useState("");
 
   const [servicios, setServicios] = useState<Servicio[]>([]);
   const [filtered, setFiltered] = useState<Servicio[]>([]);
@@ -124,6 +125,7 @@ export default function ServiciosPage() {
       return;
     }
 
+    setRol(localStorage.getItem("rol") ?? "");
     setAuthChecked(true);
   }, [router]);
 
@@ -451,12 +453,14 @@ export default function ServiciosPage() {
             ← Volver
           </button>
 
-          <button
-            className={`${styles.btn} ${styles.btnSecondary}`}
-            onClick={() => setShowGestion(true)}
-          >
-            Gestionar tipos
-          </button>
+          {rol !== "EmpleadoBasico" && (
+            <button
+              className={`${styles.btn} ${styles.btnSecondary}`}
+              onClick={() => setShowGestion(true)}
+            >
+              Gestionar tipos
+            </button>
+          )}
           <button
             id="btn-add"
             className={`${styles.btn} ${styles.btnPrimary}`}
@@ -563,7 +567,7 @@ export default function ServiciosPage() {
                 <th>Servicio</th>
                 <th>Fecha</th>
                 <th>Monto</th>
-                <th style={{ textAlign: "right" }}>Acciones</th>
+                {rol !== "EmpleadoBasico" && <th style={{ textAlign: "right" }}>Acciones</th>}
               </tr>
             </thead>
             <tbody>
@@ -572,16 +576,18 @@ export default function ServiciosPage() {
                   <td>{s.nombre}</td>
                   <td>{fmtFecha(s.fecha)}</td>
                   <td>{fmtPrecio(s.monto)}</td>
-                  <td>
-                    <div className={styles.tdActions}>
-                      <button
-                        className={`${styles.btn} ${styles.btnDanger} ${styles.btnSmall}`}
-                        onClick={() => setConfirmDelete(s)}
-                      >
-                        Eliminar
-                      </button>
-                    </div>
-                  </td>
+                  {rol !== "EmpleadoBasico" && (
+                    <td>
+                      <div className={styles.tdActions}>
+                        <button
+                          className={`${styles.btn} ${styles.btnDanger} ${styles.btnSmall}`}
+                          onClick={() => setConfirmDelete(s)}
+                        >
+                          Eliminar
+                        </button>
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
