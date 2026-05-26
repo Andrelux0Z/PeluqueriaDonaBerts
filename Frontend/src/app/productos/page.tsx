@@ -57,6 +57,7 @@ export default function ProductosPage() {
     cantidad: 1,
     precioUnit: 0,
     aplicarDescuento: false,
+    tipoDescuento: "PORCENTAJE" as "PORCENTAJE" | "FIJO",
     descuento: 0,
     notas: "",
   });
@@ -253,8 +254,15 @@ export default function ProductosPage() {
 
   /* ─── Compra handlers (IP-006) ──────────────── */
   const openCompra = () => {
-    setFormCompra({ idProducto: null, cantidad: 1, precioUnit: 0, aplicarDescuento: false, descuento: 0, notas: "" });
-    setModalError(null);
+    setFormCompra({
+      idProducto: null,
+      cantidad: 1,
+      precioUnit: 0,
+      aplicarDescuento: false,
+      tipoDescuento: "PORCENTAJE",
+      descuento: 0,
+      notas: "",
+    });
     setShowModalCompra(true);
   };
 
@@ -268,8 +276,16 @@ export default function ProductosPage() {
     if (!formCompra.idProducto) { setModalError("Debe seleccionar un producto."); return; }
     if (formCompra.cantidad <= 0) { setModalError("La cantidad debe ser mayor a cero."); return; }
     if (formCompra.precioUnit < 0) { setModalError("El precio unitario no puede ser negativo."); return; }
-    if (formCompra.aplicarDescuento && (formCompra.descuento < 0 || formCompra.descuento > 100)) {
-      setModalError("El descuento debe estar entre 0 y 100."); return;
+      
+    
+    const montoBase = formCompra.cantidad * formCompra.precioUnit;
+    const descuentoValor = formCompra.aplicarDescuento ? formCompra.descuento : 0;
+
+    if (formCompra.aplicarDescuento && formCompra.tipoDescuento === "PORCENTAJE" && (descuentoValor < 0 || descuentoValor > 100)) {
+      showToast("El porcentaje de descuento debe estar entre 0 y 100.", "error"); return;
+    }
+    if (formCompra.aplicarDescuento && formCompra.tipoDescuento === "FIJO" && descuentoValor > montoBase) {
+      setModalError("El monto fijo del descuento no puede ser mayor al total de la compra.", "error"); return;
     }
 
     setSavingCompra(true);
@@ -281,7 +297,9 @@ export default function ProductosPage() {
           idProducto: formCompra.idProducto,
           cantidad: formCompra.cantidad,
           precioUnit: formCompra.precioUnit,
-          descuento: formCompra.aplicarDescuento ? formCompra.descuento : 0,
+          aplicaDescuento: formCompra.aplicarDescuento,
+          tipoDescuento: formCompra.aplicarDescuento ? formCompra.tipoDescuento : null,
+          valorDescuento: descuentoValor,
           notas: formCompra.notas.trim() || null,
         }),
       });
@@ -708,7 +726,14 @@ export default function ProductosPage() {
                   id="inp-compra-aplica-descuento"
                   type="checkbox"
                   checked={formCompra.aplicarDescuento}
-                  onChange={(e) => setFormCompra({ ...formCompra, aplicarDescuento: e.target.checked, descuento: 0 })}
+                  onChange={(e) =>
+                    setFormCompra({
+                      ...formCompra,
+                      aplicarDescuento: e.target.checked,
+                      tipoDescuento: "PORCENTAJE",
+                      descuento: 0,
+                    })
+                  }
                 />
                 <label htmlFor="inp-compra-aplica-descuento" className={styles.label}>
                   Aplicar descuento
@@ -716,35 +741,63 @@ export default function ProductosPage() {
               </div>
 
               {formCompra.aplicarDescuento && (
-                <div className={styles.field}>
-                  <label className={styles.label} htmlFor="inp-compra-descuento">
-                    Descuento (%)
-                  </label>
-                  <input
-                    id="inp-compra-descuento"
-                    className={styles.input}
-                    type="number"
-                    min={0}
-                    max={100}
-                    step="any"
-                    value={formCompra.descuento}
-                    onChange={(e) => setFormCompra({ ...formCompra, descuento: Number(e.target.value) })}
-                    onFocus={(e) => { const t = e.target; setTimeout(() => t.select(), 0); }}
-                  />
-                </div>
+                <>
+                  <div className={styles.field}>
+                    <label className={styles.label} htmlFor="inp-compra-tipo-descuento">
+                      Tipo de descuento
+                    </label>
+                    <select
+                      id="inp-compra-tipo-descuento"
+                      className={styles.input}
+                      value={formCompra.tipoDescuento}
+                      onChange={(e) =>
+                        setFormCompra({
+                          ...formCompra,
+                          tipoDescuento: e.target.value as "PORCENTAJE" | "FIJO",
+                          descuento: 0,
+                        })
+                      }
+                    >
+                      <option value="PORCENTAJE">Porcentaje</option>
+                      <option value="FIJO">Monto fijo</option>
+                    </select>
+                  </div>
+
+                  <div className={styles.field}>
+                    <label className={styles.label} htmlFor="inp-compra-descuento">
+                      {formCompra.tipoDescuento === "PORCENTAJE" ? "Descuento (%)" : "Descuento fijo (₡)"}
+                    </label>
+                    <input
+                      id="inp-compra-descuento"
+                      className={styles.input}
+                      type="number"
+                      min={0}
+                      max={formCompra.tipoDescuento === "PORCENTAJE" ? 100 : Math.max(formCompra.cantidad * formCompra.precioUnit, 0)}
+                      step={0.01}
+                      value={formCompra.descuento}
+                      onChange={(e) => setFormCompra({ ...formCompra, descuento: Number(e.target.value) })}
+                    />
+                  </div>
+                </>
               )}
 
               {/* Live subtotal */}
-              <div className={styles.subtotalRow}>
-                <span className={styles.subtotalLabel}>Subtotal estimado:</span>
-                <span className={styles.subtotalValue}>
-                  {fmtPrecio(
-                    formCompra.cantidad *
-                      formCompra.precioUnit *
-                      (1 - (formCompra.aplicarDescuento ? formCompra.descuento : 0) / 100)
-                  )}
-                </span>
-              </div>
+              {(() => {
+                const montoBaseCompra = formCompra.cantidad * formCompra.precioUnit;
+                const descuentoAplicado = formCompra.aplicarDescuento
+                  ? formCompra.tipoDescuento === "PORCENTAJE"
+                    ? (montoBaseCompra * formCompra.descuento) / 100
+                    : formCompra.descuento
+                  : 0;
+                const precioFinal = Math.max(montoBaseCompra - descuentoAplicado, 0);
+
+                return (
+                  <div className={styles.subtotalRow}>
+                    <span className={styles.subtotalLabel}>Precio final estimado:</span>
+                    <span className={styles.subtotalValue}>{fmtPrecio(precioFinal)}</span>
+                  </div>
+                );
+              })()}
 
               <div className={styles.field}>
                 <label className={styles.label} htmlFor="inp-compra-notas">
