@@ -223,6 +223,59 @@ public class ProductosController(IConfiguration config) : ControllerBase
     }
 
     /// <summary>
+    /// Registra una compra de producto (IP-006), actualiza stock.
+    /// </summary>
+    [HttpPost("compras")]
+    public async Task<IActionResult> RegistrarCompra([FromBody] RegistrarCompraRequestDto request)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        string connStr = config.GetConnectionString("DefaultConnection")!;
+
+        try
+        {
+            await using var conn = new SqlConnection(connStr);
+            await conn.OpenAsync();
+
+            await using var cmd = new SqlCommand("dbo.sp_RegistrarCompra", conn)
+            {
+                CommandType = CommandType.StoredProcedure
+            };
+
+            cmd.Parameters.AddWithValue("@inIdProducto",  request.IdProducto);
+            cmd.Parameters.AddWithValue("@inCantidad",    request.Cantidad);
+            cmd.Parameters.AddWithValue("@inPrecioUnit",  request.PrecioUnit);
+            cmd.Parameters.AddWithValue("@inDescuento",   request.Descuento);
+            cmd.Parameters.AddWithValue("@inNotas",       (object?)request.Notas ?? DBNull.Value);
+
+            var pIdCompra   = new SqlParameter("@outIdCompra",    SqlDbType.Int) { Direction = ParameterDirection.Output };
+            var pResultCode = new SqlParameter("@outResultCode",  SqlDbType.Int) { Direction = ParameterDirection.Output };
+            cmd.Parameters.Add(pIdCompra);
+            cmd.Parameters.Add(pResultCode);
+
+            await cmd.ExecuteNonQueryAsync();
+
+            int resultCode = (int)pResultCode.Value;
+            return resultCode switch
+            {
+                0 => CreatedAtAction(nameof(GetAll),
+                        new { id = (int)pIdCompra.Value },
+                        new { id = (int)pIdCompra.Value, message = "Compra registrada correctamente." }),
+                1 => NotFound(new  { message = "El producto no existe o está inactivo." }),
+                2 => BadRequest(new { message = "La cantidad debe ser mayor a cero." }),
+                3 => BadRequest(new { message = "El precio unitario no puede ser negativo." }),
+                4 => BadRequest(new { message = "El descuento debe estar entre 0 y 100." }),
+                _ => StatusCode(500, new { message = "Error al registrar la compra." })
+            };
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Error de conexión con la base de datos.", detail = ex.Message });
+        }
+    }
+
+    /// <summary>
     /// Elimina (desactiva) un producto.
     /// </summary>
     [HttpDelete("{id}")]
