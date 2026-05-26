@@ -15,7 +15,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowFrontend",
         policy =>
         {
-            policy.WithOrigins("http://localhost:3000") // El puerto por defecto de Next.js
+            policy.WithOrigins("http://localhost:3000", "http://127.0.0.1:3000") // El puerto por defecto de Next.js
                   .AllowAnyHeader()
                   .AllowAnyMethod();
         });

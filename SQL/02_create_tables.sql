@@ -25,6 +25,7 @@ GO
 CREATE TABLE dbo.TipoServicio (
     Id       INT IDENTITY(1,1) PRIMARY KEY,
     Nombre   VARCHAR(100) NOT NULL,
+    Descripcion VARCHAR(200) NOT NULL DEFAULT '',
     Precio   DECIMAL(10,2) NOT NULL DEFAULT 0, -- precio sugerido
     EsActivo BIT           NOT NULL DEFAULT 1
 );

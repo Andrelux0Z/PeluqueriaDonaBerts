@@ -18,15 +18,15 @@ INSERT INTO dbo.CategoriaProducto (Nombre) VALUES
 GO
 
 -- Tipos de servicio
-INSERT INTO dbo.TipoServicio (Nombre, Precio) VALUES
-    ('Corte de cabello',        5000.00),
-    ('Corte y lavado',          7500.00),
-    ('Tinte completo',         15000.00),
-    ('Mechas / Rayitos',       20000.00),
-    ('Alisado permanente',     25000.00),
-    ('Peinado para evento',    12000.00),
-    ('Tratamiento capilar',     8000.00),
-    ('Barba y bigote',          3500.00);
+INSERT INTO dbo.TipoServicio (Nombre, Descripcion, Precio) VALUES
+    ('Corte de cabello',       'Corte clásico o moderno según preferencia del cliente.',   5000.00),
+    ('Corte y lavado',         'Servicio completo con lavado previo al corte.',             7500.00),
+    ('Tinte completo',         'Aplicación total de coloración en cabello.',               15000.00),
+    ('Mechas / Rayitos',       'Iluminación parcial para dar dimensión y contraste.',      20000.00),
+    ('Alisado permanente',     'Tratamiento de alisado de larga duración.',                25000.00),
+    ('Peinado para evento',    'Peinado formal para celebraciones y ocasiones especiales.', 12000.00),
+    ('Tratamiento capilar',     'Nutrición e hidratación profunda del cabello.',              8000.00),
+    ('Barba y bigote',         'Perfilado y arreglo de barba y bigote.',                    3500.00);
 GO
 
 -- ════════════════════════════════════════════════════════════════

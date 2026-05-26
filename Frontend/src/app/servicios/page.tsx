@@ -432,6 +432,12 @@ export default function ServiciosPage() {
           </button>
           <button
             className={`${styles.btn} ${styles.btnSecondary}`}
+            onClick={() => router.push("/servicios/catalogo")}
+          >
+            Catálogo
+          </button>
+          <button
+            className={`${styles.btn} ${styles.btnSecondary}`}
             onClick={() => setShowGestion(true)}
           >
             Gestionar tipos

@@ -11,6 +11,40 @@ public class ServiciosController(IConfiguration config) : ControllerBase
 {
     private readonly string _connStr = config.GetConnectionString("DefaultConnection")!;
 
+    private List<TipoServicioResponseDto> CargarCatalogoServicios()
+    {
+        using var conn = new SqlConnection(_connStr);
+        conn.Open();
+        using var cmd = new SqlCommand("dbo.sp_ObtenerTiposServicio", conn)
+        {
+            CommandType = CommandType.StoredProcedure
+        };
+
+        var pResultCode = new SqlParameter("@outResultCode", SqlDbType.Int) { Direction = ParameterDirection.Output };
+        cmd.Parameters.Add(pResultCode);
+
+        var catalogo = new List<TipoServicioResponseDto>();
+        using var reader = cmd.ExecuteReader();
+        while (reader.Read())
+        {
+            catalogo.Add(new TipoServicioResponseDto
+            {
+                Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                NombreServicio = reader.GetString(reader.GetOrdinal("NombreServicio")),
+                Descripcion = reader.IsDBNull(reader.GetOrdinal("Descripcion")) ? string.Empty : reader.GetString(reader.GetOrdinal("Descripcion")),
+                PrecioBase = reader.GetDecimal(reader.GetOrdinal("PrecioBase")),
+                EsActivo = true
+            });
+        }
+
+        reader.Close();
+        int resultCode = (int)pResultCode.Value;
+        if (resultCode != 0)
+            throw new InvalidOperationException("Error al obtener las configuraciones de servicio.");
+
+        return catalogo;
+    }
+
     [HttpPost]
     public IActionResult RegistrarServicio([FromBody] RegistrarServicioRequestDto request)
     {
@@ -108,34 +142,28 @@ public class ServiciosController(IConfiguration config) : ControllerBase
     {
         try
         {
-            using var conn = new SqlConnection(_connStr);
-            conn.Open();
-            using var cmd = new SqlCommand("dbo.sp_ObtenerTiposServicio", conn)
-            {
-                CommandType = CommandType.StoredProcedure
-            };
+            return Ok(CargarCatalogoServicios());
+        }
+        catch (InvalidOperationException ex)
+        {
+            return StatusCode(500, new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Error de conexión con la base de datos.", error = ex.Message });
+        }
+    }
 
-            var pResultCode = new SqlParameter("@outResultCode", SqlDbType.Int) { Direction = ParameterDirection.Output };
-            cmd.Parameters.Add(pResultCode);
-
-            var configuraciones = new List<object>();
-            using var reader = cmd.ExecuteReader();
-            while (reader.Read())
-            {
-                configuraciones.Add(new
-                {
-                    id             = reader.GetInt32(reader.GetOrdinal("Id")),
-                    nombreServicio = reader.GetString(reader.GetOrdinal("NombreServicio")),
-                    precioBase     = reader.GetDecimal(reader.GetOrdinal("PrecioBase"))
-                });
-            }
-
-            reader.Close();
-            int resultCode = (int)pResultCode.Value;
-            if (resultCode != 0)
-                return StatusCode(500, new { message = "Error al obtener las configuraciones de servicio." });
-
-            return Ok(configuraciones);
+    [HttpGet("catalogo")]
+    public IActionResult ObtenerCatalogo()
+    {
+        try
+        {
+            return Ok(CargarCatalogoServicios());
+        }
+        catch (InvalidOperationException ex)
+        {
+            return StatusCode(500, new { message = ex.Message });
         }
         catch (Exception ex)
         {

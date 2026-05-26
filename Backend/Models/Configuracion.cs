@@ -14,6 +14,10 @@ public class Configuracion
     public string NombreServicio { get; set; } = string.Empty;
 
     [Required]
+    [MaxLength(200)]
+    public string Descripcion { get; set; } = string.Empty;
+
+    [Required]
     [Column(TypeName = "decimal(10,2)")]
     public decimal PrecioBase { get; set; }
 

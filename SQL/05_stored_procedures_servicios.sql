@@ -23,6 +23,7 @@ BEGIN
         SELECT 
             Id, 
             Nombre AS NombreServicio, 
+            Descripcion,
             Precio AS PrecioBase
         FROM dbo.TipoServicio
         WHERE EsActivo = 1
