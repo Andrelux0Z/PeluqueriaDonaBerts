@@ -64,12 +64,13 @@ export default function HistorialPage() {
     }
   }, []);
 
-  const fetchFiltered = useCallback(async () => {
+  const fetchFiltered = useCallback(async (filtroOverride?: Filtro) => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
 
-      if (filtro !== "Todos") params.set("TipoTransaccion", filtro);
+      const activeFiltro = filtroOverride ?? filtro;
+      if (activeFiltro !== "Todos") params.set("TipoTransaccion", activeFiltro);
       if (fechaInicio) params.set("FechaInicio", fechaInicio);
       if (fechaFin) params.set("FechaFin", fechaFin);
       if (montoMin.trim()) params.set("MontoMin", montoMin.trim());
@@ -201,7 +202,15 @@ export default function HistorialPage() {
           <button
             key={f}
             className={`${styles.filterBtn} ${filtro === f ? styles.filterBtnActive : ""}`}
-            onClick={() => setFiltro(f)}
+            onClick={() => {
+              setFiltro(f);
+              const hasOtherFilters = !!fechaInicio || !!fechaFin || !!montoMin.trim() || !!montoMax.trim() || !!detalle.trim();
+              if (f === "Todos" && !hasOtherFilters) {
+                fetchAll();
+              } else {
+                fetchFiltered(f);
+              }
+            }}
           >
             {f}
           </button>
