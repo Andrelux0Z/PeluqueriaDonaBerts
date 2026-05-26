@@ -430,12 +430,7 @@ export default function ServiciosPage() {
           >
             ← Volver
           </button>
-          <button
-            className={`${styles.btn} ${styles.btnSecondary}`}
-            onClick={() => router.push("/servicios/catalogo")}
-          >
-            Catálogo
-          </button>
+
           <button
             className={`${styles.btn} ${styles.btnSecondary}`}
             onClick={() => setShowGestion(true)}
@@ -643,13 +638,7 @@ export default function ServiciosPage() {
                       </option>
                     ))}
                   </select>
-                  <button
-                    type="button"
-                    className={styles.btnLink}
-                    onClick={openNuevoTipo}
-                  >
-                    + Crear nuevo tipo
-                  </button>
+
                 </div>
               )}
 
@@ -757,13 +746,22 @@ export default function ServiciosPage() {
           <div className={styles.modalWide} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
               <h2 className={styles.modalTitle}>Gestionar tipos de servicio</h2>
-              <button
-                type="button"
-                className={styles.btnClose}
-                onClick={() => setShowGestion(false)}
-              >
-                ×
-              </button>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <button
+                  type="button"
+                  className={`${styles.btn} ${styles.btnPrimary} ${styles.btnSmall}`}
+                  onClick={openNuevoTipo}
+                >
+                  + Nuevo tipo
+                </button>
+                <button
+                  type="button"
+                  className={styles.btnClose}
+                  onClick={() => setShowGestion(false)}
+                >
+                  ×
+                </button>
+              </div>
             </div>
 
             {tipos.length === 0 ? (

@@ -12,7 +12,7 @@ interface Transaccion {
   fecha: string;
   monto: number;
   esAdquisicion: boolean;
-  nombreServicio: string;
+  detalle: string;
 }
 
 type Filtro = "Todos" | "Compra" | "Venta" | "Servicio";
@@ -33,7 +33,7 @@ export default function HistorialPage() {
   const [fechaFin, setFechaFin] = useState("");
   const [montoMin, setMontoMin] = useState("");
   const [montoMax, setMontoMax] = useState("");
-  const [nombreServicio, setNombreServicio] = useState("");
+  const [detalle, setDetalle] = useState("");
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<Toast | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
@@ -74,7 +74,7 @@ export default function HistorialPage() {
       if (fechaFin) params.set("FechaFin", fechaFin);
       if (montoMin.trim()) params.set("MontoMin", montoMin.trim());
       if (montoMax.trim()) params.set("MontoMax", montoMax.trim());
-      if (nombreServicio.trim()) params.set("NombreServicio", nombreServicio.trim());
+      if (detalle.trim()) params.set("Detalle", detalle.trim());
 
       const query = params.toString();
       const res = await fetch(`${API}/filtrar?${query}`);
@@ -98,7 +98,7 @@ export default function HistorialPage() {
     } finally {
       setLoading(false);
     }
-  }, [filtro, fechaInicio, fechaFin, montoMin, montoMax, nombreServicio]);
+  }, [filtro, fechaInicio, fechaFin, montoMin, montoMax, detalle]);
 
   useEffect(() => {
     if (authChecked) fetchAll();
@@ -149,12 +149,12 @@ export default function HistorialPage() {
     Boolean(fechaFin) ||
     Boolean(montoMin) ||
     Boolean(montoMax) ||
-    Boolean(nombreServicio.trim());
+    Boolean(detalle.trim());
 
   /* ─── Actions ────────────────────────────────── */
   const aplicarFiltros = async () => {
     if (!hasActiveFilters) {
-      setToast({ message: "Ingrese al menos un criterio para aplicar filtros.", type: "error" });
+      await fetchAll();
       return;
     }
 
@@ -167,7 +167,7 @@ export default function HistorialPage() {
     setFechaFin("");
     setMontoMin("");
     setMontoMax("");
-    setNombreServicio("");
+    setDetalle("");
     await fetchAll();
   };
 
@@ -247,13 +247,13 @@ export default function HistorialPage() {
           />
         </div>
         <div className={styles.filterDateGroup}>
-          <label className={styles.filterDateLabel}>Servicio:</label>
+          <label className={styles.filterDateLabel}>Detalle:</label>
           <input
             type="text"
             className={`${styles.filterDate} ${styles.filterText}`}
-            value={nombreServicio}
-            placeholder="Nombre del servicio"
-            onChange={(e) => setNombreServicio(e.target.value)}
+            value={detalle}
+            placeholder="Nombre de producto o servicio"
+            onChange={(e) => setDetalle(e.target.value)}
           />
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -286,7 +286,7 @@ export default function HistorialPage() {
               <tr>
                 <th>Tipo</th>
                 <th>Ref.</th>
-                <th>Servicio</th>
+                <th>Detalle</th>
                 <th>Fecha</th>
                 <th style={{ textAlign: "right" }}>Monto</th>
               </tr>
@@ -300,7 +300,7 @@ export default function HistorialPage() {
                     </span>
                   </td>
                   <td>#{t.idReferencia}</td>
-                  <td>{t.nombreServicio || "—"}</td>
+                  <td>{t.detalle || "—"}</td>
                   <td>{fmtFecha(t.fecha)}</td>
                   <td style={{ textAlign: "right" }}>
                     <span className={t.esAdquisicion ? styles.montoOut : styles.montoIn}>

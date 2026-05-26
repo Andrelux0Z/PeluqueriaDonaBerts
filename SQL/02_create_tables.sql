@@ -171,9 +171,10 @@ AS
         c.Fecha,
         SUM(dc.Subtotal)    AS Monto,
         1                   AS EsAdquisicion, -- TRUE = dinero que sale
-        NULL                AS NombreServicio
+        MAX(p.Nombre)       AS Detalle
     FROM dbo.Compra c
     INNER JOIN dbo.DetalleCompra dc ON dc.IdCompra = c.Id
+    INNER JOIN dbo.Producto p ON p.Id = dc.IdProducto
     GROUP BY c.Id, c.Fecha
 
     UNION ALL
@@ -185,9 +186,10 @@ AS
         v.Fecha,
         SUM(dv.Subtotal)    AS Monto,
         0                   AS EsAdquisicion, -- FALSE = dinero que entra
-        NULL                AS NombreServicio
+        MAX(p.Nombre)       AS Detalle
     FROM dbo.Venta v
     INNER JOIN dbo.DetalleVenta dv ON dv.IdVenta = v.Id
+    INNER JOIN dbo.Producto p ON p.Id = dv.IdProducto
     GROUP BY v.Id, v.Fecha
 
     UNION ALL
@@ -199,7 +201,7 @@ AS
         s.Fecha,
         s.Monto,
         0                   AS EsAdquisicion,
-        COALESCE(ts.Nombre, s.NombreLibre) AS NombreServicio
+        COALESCE(ts.Nombre, s.NombreLibre) AS Detalle
     FROM dbo.Servicio s
     LEFT JOIN dbo.TipoServicio ts ON ts.Id = s.IdTipoServicio;
 GO

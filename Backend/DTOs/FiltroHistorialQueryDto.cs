@@ -12,7 +12,7 @@ public class FiltroHistorialQueryDto
 
     public decimal? MontoMax { get; set; }
 
-    public string? NombreServicio { get; set; }
+    public string? Detalle { get; set; }
 
     public bool TieneAlgunCriterio =>
         !string.IsNullOrWhiteSpace(TipoTransaccion) ||
@@ -20,5 +20,5 @@ public class FiltroHistorialQueryDto
         FechaFin.HasValue ||
         MontoMin.HasValue ||
         MontoMax.HasValue ||
-        !string.IsNullOrWhiteSpace(NombreServicio);
+        !string.IsNullOrWhiteSpace(Detalle);
 }

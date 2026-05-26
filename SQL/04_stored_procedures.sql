@@ -314,12 +314,12 @@ IF OBJECT_ID('dbo.sp_ListarHistorial', 'P') IS NOT NULL
 GO
 
 CREATE PROCEDURE dbo.sp_ListarHistorial
-    @inTipoTransaccion VARCHAR(20) = NULL,
-    @inFechaInicio DATETIME = NULL,
-    @inFechaFin DATETIME = NULL,
-    @inMontoMin DECIMAL(10,2) = NULL,
-    @inMontoMax DECIMAL(10,2) = NULL,
-    @inNombreServicio VARCHAR(100) = NULL
+    @inTipoTransaccion VARCHAR(50) = NULL,
+    @inFechaInicio     DATETIME = NULL,
+    @inFechaFin        DATETIME = NULL,
+    @inMontoMin        DECIMAL(10,2) = NULL,
+    @inMontoMax        DECIMAL(10,2) = NULL,
+    @inDetalle         VARCHAR(100) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -334,13 +334,10 @@ BEGIN
     FROM dbo.vw_Historial
     WHERE (@inTipoTransaccion IS NULL OR TipoTransaccion = @inTipoTransaccion)
       AND (@inFechaInicio IS NULL OR Fecha >= @inFechaInicio)
-      AND (@inFechaFin IS NULL OR Fecha <= DATEADD(DAY, 1, @inFechaFin))
+      AND (@inFechaFin IS NULL OR Fecha <= @inFechaFin)
       AND (@inMontoMin IS NULL OR Monto >= @inMontoMin)
       AND (@inMontoMax IS NULL OR Monto <= @inMontoMax)
-      AND (
-            @inNombreServicio IS NULL
-            OR NombreServicio LIKE '%' + @inNombreServicio + '%'
-          )
+      AND (@inDetalle IS NULL OR Detalle LIKE '%' + @inDetalle + '%')
     ORDER BY Fecha DESC;
 END;
 GO

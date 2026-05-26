@@ -80,7 +80,7 @@ public class HistorialController(IConfiguration config) : ControllerBase
         AgregarParametroFecha(cmd, "@inFechaFin", filtro.FechaFin);
         AgregarParametroDecimal(cmd, "@inMontoMin", filtro.MontoMin);
         AgregarParametroDecimal(cmd, "@inMontoMax", filtro.MontoMax);
-        AgregarParametroCadena(cmd, "@inNombreServicio", filtro.NombreServicio);
+        AgregarParametroCadena(cmd, "@inDetalle", filtro.Detalle);
 
         var reader = await cmd.ExecuteReaderAsync();
         var historial = new List<object>();
@@ -94,9 +94,9 @@ public class HistorialController(IConfiguration config) : ControllerBase
                 fecha = reader.GetDateTime(reader.GetOrdinal("Fecha")),
                 monto = reader.GetDecimal(reader.GetOrdinal("Monto")),
                 esAdquisicion = reader.GetInt32(reader.GetOrdinal("EsAdquisicion")) == 1,
-                nombreServicio = reader.IsDBNull(reader.GetOrdinal("NombreServicio"))
+                detalle = reader.IsDBNull(reader.GetOrdinal("Detalle"))
                     ? string.Empty
-                    : reader.GetString(reader.GetOrdinal("NombreServicio"))
+                    : reader.GetString(reader.GetOrdinal("Detalle"))
             });
         }
 
