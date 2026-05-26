@@ -231,6 +231,29 @@ public class ProductosController(IConfiguration config) : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
+        decimal montoBase = request.Cantidad * request.PrecioUnit;
+        string tipoDescuento = string.IsNullOrWhiteSpace(request.TipoDescuento)
+            ? "PORCENTAJE"
+            : request.TipoDescuento.Trim().ToUpperInvariant();
+        decimal valorDescuento = request.AplicaDescuento ? request.ValorDescuento : 0;
+
+        if (request.AplicaDescuento)
+        {
+            if (tipoDescuento is not ("PORCENTAJE" or "FIJO"))
+                return BadRequest(new { message = "El tipo de descuento no es válido." });
+
+            if (tipoDescuento == "PORCENTAJE" && (valorDescuento < 0 || valorDescuento > 100))
+                return BadRequest(new { message = "El porcentaje de descuento debe estar entre 0 y 100." });
+
+            if (tipoDescuento == "FIJO" && valorDescuento > montoBase)
+                return BadRequest(new { message = "El monto fijo del descuento no puede ser mayor al total de la compra." });
+        }
+        else
+        {
+            tipoDescuento = "PORCENTAJE";
+            valorDescuento = 0;
+        }
+
         string connStr = config.GetConnectionString("DefaultConnection")!;
 
         try
@@ -246,7 +269,8 @@ public class ProductosController(IConfiguration config) : ControllerBase
             cmd.Parameters.AddWithValue("@inIdProducto",  request.IdProducto);
             cmd.Parameters.AddWithValue("@inCantidad",    request.Cantidad);
             cmd.Parameters.AddWithValue("@inPrecioUnit",  request.PrecioUnit);
-            cmd.Parameters.AddWithValue("@inDescuento",   request.Descuento);
+            cmd.Parameters.AddWithValue("@inTipoDescuento", tipoDescuento);
+            cmd.Parameters.AddWithValue("@inDescuento",   valorDescuento);
             cmd.Parameters.AddWithValue("@inNotas",       (object?)request.Notas ?? DBNull.Value);
 
             var pIdCompra   = new SqlParameter("@outIdCompra",    SqlDbType.Int) { Direction = ParameterDirection.Output };
@@ -265,7 +289,9 @@ public class ProductosController(IConfiguration config) : ControllerBase
                 1 => NotFound(new  { message = "El producto no existe o está inactivo." }),
                 2 => BadRequest(new { message = "La cantidad debe ser mayor a cero." }),
                 3 => BadRequest(new { message = "El precio unitario no puede ser negativo." }),
-                4 => BadRequest(new { message = "El descuento debe estar entre 0 y 100." }),
+                4 => BadRequest(new { message = "El porcentaje de descuento debe estar entre 0 y 100." }),
+                5 => BadRequest(new { message = "El monto fijo del descuento no puede ser mayor al total de la compra." }),
+                6 => BadRequest(new { message = "El tipo de descuento no es válido." }),
                 _ => StatusCode(500, new { message = "Error al registrar la compra." })
             };
         }

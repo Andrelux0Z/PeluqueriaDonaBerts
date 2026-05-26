@@ -88,8 +88,14 @@ CREATE TABLE dbo.DetalleCompra (
     IdProducto  INT            NOT NULL,
     Cantidad    INT            NOT NULL,
     PrecioUnit  DECIMAL(10,2)  NOT NULL,
-    Descuento   DECIMAL(5,2)   NOT NULL DEFAULT 0,
-    Subtotal    AS (Cantidad * PrecioUnit * (1.0 - Descuento / 100.0)) PERSISTED,
+    Descuento   DECIMAL(10,2)  NOT NULL DEFAULT 0,
+    TipoDescuento VARCHAR(20)  NOT NULL DEFAULT 'PORCENTAJE',
+    Subtotal    AS (
+        CASE
+            WHEN TipoDescuento = 'FIJO' THEN (Cantidad * PrecioUnit) - Descuento
+            ELSE Cantidad * PrecioUnit * (1.0 - Descuento / 100.0)
+        END
+    ) PERSISTED,
 
     CONSTRAINT FK_DetalleCompra_Compra
         FOREIGN KEY (IdCompra) REFERENCES dbo.Compra(Id),
@@ -98,7 +104,10 @@ CREATE TABLE dbo.DetalleCompra (
 
     CONSTRAINT CK_DetalleCompra_Cantidad  CHECK (Cantidad > 0),
     CONSTRAINT CK_DetalleCompra_Precio    CHECK (PrecioUnit >= 0),
-    CONSTRAINT CK_DetalleCompra_Descuento CHECK (Descuento >= 0 AND Descuento <= 100)
+    CONSTRAINT CK_DetalleCompra_TipoDescuento CHECK (TipoDescuento IN ('PORCENTAJE', 'FIJO')),
+    CONSTRAINT CK_DetalleCompra_Descuento CHECK (Descuento >= 0),
+    CONSTRAINT CK_DetalleCompra_DescuentoPorcentaje CHECK (TipoDescuento <> 'PORCENTAJE' OR Descuento <= 100),
+    CONSTRAINT CK_DetalleCompra_DescuentoFijo CHECK (TipoDescuento <> 'FIJO' OR Descuento <= (Cantidad * PrecioUnit))
 );
 GO
 

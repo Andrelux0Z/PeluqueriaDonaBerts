@@ -204,6 +204,116 @@ END;
 GO
 
 -- ════════════════════════════════════════════════════════════════
+-- 4.1 sp_RegistrarCompra
+--    Registra una compra, aplica descuento porcentual o fijo,
+--    actualiza stock y guarda el detalle en la base de datos.
+-- ════════════════════════════════════════════════════════════════
+
+IF OBJECT_ID('dbo.sp_RegistrarCompra', 'P') IS NOT NULL
+    DROP PROCEDURE dbo.sp_RegistrarCompra;
+GO
+
+CREATE PROCEDURE dbo.sp_RegistrarCompra
+    @inIdProducto     INT,
+    @inCantidad       INT,
+    @inPrecioUnit     DECIMAL(10,2),
+    @inTipoDescuento  VARCHAR(20) = 'PORCENTAJE',
+    @inDescuento      DECIMAL(10,2) = 0,
+    @inNotas          VARCHAR(255) = NULL,
+    @outIdCompra      INT OUTPUT,
+    @outResultCode    INT OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+    SET @outIdCompra = 0;
+    SET @outResultCode = 0;
+
+    BEGIN TRY
+        IF @inCantidad <= 0
+        BEGIN
+            SET @outResultCode = 2;
+            RETURN;
+        END;
+
+        IF @inPrecioUnit < 0
+        BEGIN
+            SET @outResultCode = 3;
+            RETURN;
+        END;
+
+        DECLARE @Tipo VARCHAR(20) = UPPER(LTRIM(RTRIM(ISNULL(@inTipoDescuento, 'PORCENTAJE'))));
+        IF @Tipo NOT IN ('PORCENTAJE', 'FIJO')
+        BEGIN
+            SET @outResultCode = 6;
+            RETURN;
+        END;
+
+        DECLARE @MontoBase DECIMAL(18,2) = @inCantidad * @inPrecioUnit;
+
+        IF @Tipo = 'PORCENTAJE' AND (@inDescuento < 0 OR @inDescuento > 100)
+        BEGIN
+            SET @outResultCode = 4;
+            RETURN;
+        END;
+
+        IF @Tipo = 'FIJO' AND (@inDescuento < 0 OR @inDescuento > @MontoBase)
+        BEGIN
+            SET @outResultCode = 5;
+            RETURN;
+        END;
+
+        IF NOT EXISTS (SELECT 1 FROM dbo.Producto WHERE Id = @inIdProducto AND EsActivo = 1)
+        BEGIN
+            SET @outResultCode = 1;
+            RETURN;
+        END;
+
+        DECLARE @IdProveedor INT;
+        SELECT TOP (1) @IdProveedor = Id
+        FROM dbo.Proveedor
+        WHERE EsActivo = 1
+        ORDER BY Id;
+
+        IF @IdProveedor IS NULL
+        BEGIN
+            SET @outResultCode = 1;
+            RETURN;
+        END;
+
+        BEGIN TRAN;
+
+        INSERT INTO dbo.Compra (IdProveedor, Fecha, Notas)
+        VALUES (@IdProveedor, GETDATE(), @inNotas);
+
+        SET @outIdCompra = SCOPE_IDENTITY();
+
+        INSERT INTO dbo.DetalleCompra (IdCompra, IdProducto, Cantidad, PrecioUnit, Descuento, TipoDescuento)
+        VALUES (@outIdCompra, @inIdProducto, @inCantidad, @inPrecioUnit, @inDescuento, @Tipo);
+
+        UPDATE dbo.Producto
+        SET Stock = Stock + @inCantidad
+        WHERE Id = @inIdProducto AND EsActivo = 1;
+
+        IF @@ROWCOUNT = 0
+        BEGIN
+            ROLLBACK;
+            SET @outResultCode = 1;
+            RETURN;
+        END;
+
+        COMMIT;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK;
+
+        SET @outResultCode = 50000 + ERROR_NUMBER();
+    END CATCH;
+END;
+GO
+
+-- ════════════════════════════════════════════════════════════════
 -- 5. sp_ListarServicios
 --    Devuelve todos los servicios con el nombre resuelto:
 --    si tiene TipoServicio usa ese nombre, si no usa NombreLibre.
@@ -330,7 +440,7 @@ BEGIN
         Fecha,
         Monto,
         EsAdquisicion,
-        NombreServicio
+        Detalle
     FROM dbo.vw_Historial
     WHERE (@inTipoTransaccion IS NULL OR TipoTransaccion = @inTipoTransaccion)
       AND (@inFechaInicio IS NULL OR Fecha >= @inFechaInicio)
