@@ -344,6 +344,45 @@
   color: var(--ink);
 }
 
+/* ── Compra modal extras ────────────────────── */
+.modalCompra {
+  width: min(500px, 92vw);
+}
+
+.checkboxRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.checkboxRow input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.subtotalRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg);
+  border: 1px solid var(--outline);
+  border-radius: 4px;
+  padding: 8px 12px;
+}
+
+.subtotalLabel {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.subtotalValue {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
 /* ── Responsive ─────────────────────────────── */
 @media (max-width: 600px) {
   .page {

@@ -243,7 +243,6 @@ public class ProductosController(IConfiguration config) : ControllerBase
                 CommandType = CommandType.StoredProcedure
             };
 
-            cmd.Parameters.AddWithValue("@inIdProveedor", request.IdProveedor);
             cmd.Parameters.AddWithValue("@inIdProducto",  request.IdProducto);
             cmd.Parameters.AddWithValue("@inCantidad",    request.Cantidad);
             cmd.Parameters.AddWithValue("@inPrecioUnit",  request.PrecioUnit);
@@ -267,7 +266,6 @@ public class ProductosController(IConfiguration config) : ControllerBase
                 2 => BadRequest(new { message = "La cantidad debe ser mayor a cero." }),
                 3 => BadRequest(new { message = "El precio unitario no puede ser negativo." }),
                 4 => BadRequest(new { message = "El descuento debe estar entre 0 y 100." }),
-                5 => NotFound(new  { message = "El proveedor no existe." }),
                 _ => StatusCode(500, new { message = "Error al registrar la compra." })
             };
         }

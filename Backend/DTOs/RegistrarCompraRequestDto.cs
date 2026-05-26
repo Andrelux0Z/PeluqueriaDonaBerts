@@ -19,7 +19,5 @@ public class RegistrarCompraRequestDto
     [Range(0, 100, ErrorMessage = "El descuento debe estar entre 0 y 100.")]
     public decimal Descuento { get; set; } = 0;
 
-    public int IdProveedor { get; set; } = 1;
-
     public string? Notas { get; set; }
 }

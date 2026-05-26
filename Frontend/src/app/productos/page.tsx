@@ -47,6 +47,18 @@ export default function ProductosPage() {
   /* Delete confirm */
   const [confirmDelete, setConfirmDelete] = useState<Producto | null>(null);
 
+  /* Registrar compra (IP-006) */
+  const [showModalCompra, setShowModalCompra] = useState(false);
+  const [formCompra, setFormCompra] = useState({
+    idProducto: null as number | null,
+    cantidad: 1,
+    precioUnit: 0,
+    aplicarDescuento: false,
+    descuento: 0,
+    notas: "",
+  });
+  const [savingCompra, setSavingCompra] = useState(false);
+
   /* ─── Data fetching ──────────────────────────── */
   const fetchProductos = useCallback(async () => {
     setLoading(true);
@@ -227,6 +239,50 @@ export default function ProductosPage() {
     }
   };
 
+  /* ─── Compra handlers (IP-006) ──────────────── */
+  const openCompra = () => {
+    setFormCompra({ idProducto: null, cantidad: 1, precioUnit: 0, aplicarDescuento: false, descuento: 0, notas: "" });
+    setShowModalCompra(true);
+  };
+
+  const closeCompra = () => setShowModalCompra(false);
+
+  const handleRegistrarCompra = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formCompra.idProducto) { showToast("Debe seleccionar un producto.", "error"); return; }
+    if (formCompra.cantidad <= 0) { showToast("La cantidad debe ser mayor a cero.", "error"); return; }
+    if (formCompra.precioUnit < 0) { showToast("El precio unitario no puede ser negativo.", "error"); return; }
+    if (formCompra.aplicarDescuento && (formCompra.descuento < 0 || formCompra.descuento > 100)) {
+      showToast("El descuento debe estar entre 0 y 100.", "error"); return;
+    }
+
+    setSavingCompra(true);
+    try {
+      const res = await fetch(`${API}/compras`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          idProducto: formCompra.idProducto,
+          cantidad: formCompra.cantidad,
+          precioUnit: formCompra.precioUnit,
+          descuento: formCompra.aplicarDescuento ? formCompra.descuento : 0,
+          notas: formCompra.notas.trim() || null,
+        }),
+      });
+
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(data?.message || "Error al registrar la compra.");
+
+      showToast("Compra registrada correctamente.", "success");
+      closeCompra();
+      fetchProductos();
+    } catch (err: unknown) {
+      showToast(err instanceof Error ? err.message : "Error inesperado", "error");
+    } finally {
+      setSavingCompra(false);
+    }
+  };
+
   /* ─── Derived data ───────────────────────────── */
   const totalProductos = productos.length;
   const totalUnidades = productos.reduce((sum, p) => sum + p.cantidad, 0);
@@ -251,6 +307,13 @@ export default function ProductosPage() {
             onClick={() => router.push("/dashboard")}
           >
             ← Volver
+          </button>
+          <button
+            id="btn-registrar-compra"
+            className={`${styles.btn} ${styles.btnSecondary}`}
+            onClick={openCompra}
+          >
+            Registrar compra
           </button>
           <button
             id="btn-add"
@@ -543,6 +606,145 @@ export default function ProductosPage() {
                 Eliminar
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Registrar compra modal (IP-006) ─────── */}
+      {showModalCompra && (
+        <div className={styles.overlay} onClick={closeCompra}>
+          <div className={`${styles.modal} ${styles.modalCompra}`} onClick={(e) => e.stopPropagation()}>
+            <h2 className={styles.modalTitle}>Registrar compra</h2>
+
+            <form className={styles.form} onSubmit={handleRegistrarCompra}>
+              <div className={styles.field}>
+                <label className={styles.label} htmlFor="inp-compra-producto">
+                  Producto
+                </label>
+                <select
+                  id="inp-compra-producto"
+                  className={styles.input}
+                  value={formCompra.idProducto ?? ""}
+                  onChange={(e) =>
+                    setFormCompra({ ...formCompra, idProducto: e.target.value ? Number(e.target.value) : null })
+                  }
+                  required
+                >
+                  <option value="">Seleccione un producto…</option>
+                  {productos.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.nombre} ({p.codigo}) — stock: {p.cantidad}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className={styles.field}>
+                <label className={styles.label} htmlFor="inp-compra-cantidad">
+                  Cantidad
+                </label>
+                <input
+                  id="inp-compra-cantidad"
+                  className={styles.input}
+                  type="number"
+                  min={1}
+                  value={formCompra.cantidad}
+                  onChange={(e) => setFormCompra({ ...formCompra, cantidad: Number(e.target.value) })}
+                  required
+                />
+              </div>
+
+              <div className={styles.field}>
+                <label className={styles.label} htmlFor="inp-compra-precio">
+                  Precio unitario (₡)
+                </label>
+                <input
+                  id="inp-compra-precio"
+                  className={styles.input}
+                  type="number"
+                  min={0}
+                  step={0.01}
+                  value={formCompra.precioUnit}
+                  onChange={(e) => setFormCompra({ ...formCompra, precioUnit: Number(e.target.value) })}
+                  required
+                />
+              </div>
+
+              {/* Descuento toggle (IP-005 sub-flow) */}
+              <div className={styles.checkboxRow}>
+                <input
+                  id="inp-compra-aplica-descuento"
+                  type="checkbox"
+                  checked={formCompra.aplicarDescuento}
+                  onChange={(e) => setFormCompra({ ...formCompra, aplicarDescuento: e.target.checked, descuento: 0 })}
+                />
+                <label htmlFor="inp-compra-aplica-descuento" className={styles.label}>
+                  Aplicar descuento
+                </label>
+              </div>
+
+              {formCompra.aplicarDescuento && (
+                <div className={styles.field}>
+                  <label className={styles.label} htmlFor="inp-compra-descuento">
+                    Descuento (%)
+                  </label>
+                  <input
+                    id="inp-compra-descuento"
+                    className={styles.input}
+                    type="number"
+                    min={0}
+                    max={100}
+                    step={0.01}
+                    value={formCompra.descuento}
+                    onChange={(e) => setFormCompra({ ...formCompra, descuento: Number(e.target.value) })}
+                  />
+                </div>
+              )}
+
+              {/* Live subtotal */}
+              <div className={styles.subtotalRow}>
+                <span className={styles.subtotalLabel}>Subtotal estimado:</span>
+                <span className={styles.subtotalValue}>
+                  {fmtPrecio(
+                    formCompra.cantidad *
+                      formCompra.precioUnit *
+                      (1 - (formCompra.aplicarDescuento ? formCompra.descuento : 0) / 100)
+                  )}
+                </span>
+              </div>
+
+              <div className={styles.field}>
+                <label className={styles.label} htmlFor="inp-compra-notas">
+                  Notas (opcional)
+                </label>
+                <input
+                  id="inp-compra-notas"
+                  className={styles.input}
+                  type="text"
+                  maxLength={255}
+                  placeholder="Ej: Pedido regular mensual"
+                  value={formCompra.notas}
+                  onChange={(e) => setFormCompra({ ...formCompra, notas: e.target.value })}
+                />
+              </div>
+
+              <div className={styles.modalActions}>
+                <button
+                  type="button"
+                  className={`${styles.btn} ${styles.btnSecondary}`}
+                  onClick={closeCompra}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className={`${styles.btn} ${styles.btnPrimary}`}
+                  disabled={savingCompra}
+                >
+                  {savingCompra ? "Registrando..." : "Registrar"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
