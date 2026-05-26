@@ -26,6 +26,7 @@ const emptyForm = { nombre: "", cantidad: 0, precio: 0, stockMinimo: 5 };
 export default function ProductosPage() {
   const router = useRouter();
   const [authChecked, setAuthChecked] = useState(false);
+  const [rol, setRol] = useState("");
   const [productos, setProductos] = useState<Producto[]>([]);
   const [filtered, setFiltered] = useState<Producto[]>([]);
   const [search, setSearch] = useState("");
@@ -88,6 +89,7 @@ export default function ProductosPage() {
       return;
     }
 
+    setRol(localStorage.getItem("rol") ?? "");
     setAuthChecked(true);
   }, [router]);
 
@@ -342,20 +344,24 @@ export default function ProductosPage() {
           >
             ← Volver
           </button>
-          <button
-            id="btn-registrar-compra"
-            className={`${styles.btn} ${styles.btnSecondary}`}
-            onClick={openCompra}
-          >
-            Registrar compra
-          </button>
-          <button
-            id="btn-add"
-            className={`${styles.btn} ${styles.btnPrimary}`}
-            onClick={openCreate}
-          >
-            + Agregar
-          </button>
+          {rol !== "EmpleadoBasico" && (
+            <button
+              id="btn-registrar-compra"
+              className={`${styles.btn} ${styles.btnSecondary}`}
+              onClick={openCompra}
+            >
+              Registrar compra
+            </button>
+          )}
+          {rol !== "EmpleadoBasico" && (
+            <button
+              id="btn-add"
+              className={`${styles.btn} ${styles.btnPrimary}`}
+              onClick={openCreate}
+            >
+              + Agregar
+            </button>
+          )}
         </div>
       </div>
 
@@ -468,7 +474,7 @@ export default function ProductosPage() {
                 <th>Producto</th>
                 <th>Cantidad</th>
                 <th>Precio</th>
-                <th style={{ textAlign: "right" }}>Acciones</th>
+                {rol !== "EmpleadoBasico" && <th style={{ textAlign: "right" }}>Acciones</th>}
               </tr>
             </thead>
             <tbody>
@@ -484,22 +490,24 @@ export default function ProductosPage() {
                     )}
                   </td>
                   <td>{fmtPrecio(p.precio)}</td>
-                  <td>
-                    <div className={styles.tdActions}>
-                      <button
-                        className={`${styles.btn} ${styles.btnSecondary} ${styles.btnSmall}`}
-                        onClick={() => openEdit(p)}
-                      >
-                        Editar
-                      </button>
-                      <button
-                        className={`${styles.btn} ${styles.btnDanger} ${styles.btnSmall}`}
-                        onClick={() => setConfirmDelete(p)}
-                      >
-                        Eliminar
-                      </button>
-                    </div>
-                  </td>
+                  {rol !== "EmpleadoBasico" && (
+                    <td>
+                      <div className={styles.tdActions}>
+                        <button
+                          className={`${styles.btn} ${styles.btnSecondary} ${styles.btnSmall}`}
+                          onClick={() => openEdit(p)}
+                        >
+                          Editar
+                        </button>
+                        <button
+                          className={`${styles.btn} ${styles.btnDanger} ${styles.btnSmall}`}
+                          onClick={() => setConfirmDelete(p)}
+                        >
+                          Eliminar
+                        </button>
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>

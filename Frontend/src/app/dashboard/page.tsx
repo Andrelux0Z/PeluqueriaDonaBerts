@@ -36,6 +36,12 @@ export default function Dashboard() {
     router.push("/");
   };
 
+  const rolLabel: Record<string, string> = {
+    Admin: "Admin Principal",
+    Empleado: "Admin Alto Rango",
+    EmpleadoBasico: "Empleado Básico",
+  };
+
   const navItems = [
     { title: "Inventario", desc: "Productos, stock y precios", path: "/productos" },
     { title: "Servicios", desc: "Registro de servicios prestados", path: "/servicios" },
@@ -54,6 +60,7 @@ export default function Dashboard() {
     <div className={styles.page}>
       <div className={styles.header}>
         <h1 className={styles.title}>Bienvenido, {username}</h1>
+        {rol && <p style={{ color: "#6a6a6a", fontSize: 14, marginTop: 4 }}>{rolLabel[rol] ?? rol}</p>}
       </div>
 
       <nav className={styles.nav}>

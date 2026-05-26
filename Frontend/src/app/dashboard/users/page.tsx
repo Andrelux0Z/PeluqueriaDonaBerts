@@ -4,7 +4,11 @@ import { useRouter } from "next/navigation";
 import styles from "./users.module.css";
 
 const BACKEND_URL = "http://localhost:5028";
-const ROLES = ["Admin", "Empleado"];
+const ROLES = [
+  { value: "Admin", label: "Admin Principal" },
+  { value: "Empleado", label: "Admin Alto Rango" },
+  { value: "EmpleadoBasico", label: "Empleado Básico" },
+];
 
 interface FormErrors {
   username?: string;
@@ -220,7 +224,7 @@ export default function GestionUsuarios() {
               onChange={(e) => setRolNuevo(e.target.value)}
             >
               {ROLES.map((r) => (
-                <option key={r} value={r}>{r}</option>
+                <option key={r.value} value={r.value}>{r.label}</option>
               ))}
             </select>
           </div>
